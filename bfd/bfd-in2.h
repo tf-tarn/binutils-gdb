@@ -1795,6 +1795,8 @@ enum bfd_architecture
 #define bfd_mach_fr550         550
   bfd_arch_moxie,     /* The moxie processor.  */
 #define bfd_mach_moxie         1
+  bfd_arch_tarn,     /* The tarn processor.  */
+#define bfd_mach_tarn          1
   bfd_arch_ft32,      /* The ft32 processor.  */
 #define bfd_mach_ft32          1
 #define bfd_mach_ft32b         2
@@ -4230,6 +4232,14 @@ an offset, the equivalent of the relocation.  */
 /* This relocation is an assertion that the expression is not allocated as
 a global register.  It does not modify contents.  */
   BFD_RELOC_MMIX_LOCAL,
+
+/* This is a 8 bit reloc for the tarn that stores bits 0..7 of a symbol
+in .byte lo8(symbol)  */
+  BFD_RELOC_TARN_8_LO,
+
+/* This is a 8 bit reloc for the tarn that stores bits 8..15 of a symbol
+in .byte hi8(symbol)  */
+  BFD_RELOC_TARN_8_HI,
 
 /* This is a 16 bit reloc for the AVR that stores 8 bit pc relative
 short offset into 7 bits.  */

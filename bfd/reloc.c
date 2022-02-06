@@ -4978,6 +4978,19 @@ ENUMDOC
   This relocation is an assertion that the expression is not allocated as
   a global register.  It does not modify contents.
 
+
+ENUM
+  BFD_RELOC_TARN_8_LO
+ENUMDOC
+  This is a 8 bit reloc for the tarn that stores bits 0..7 of a symbol
+  in .byte lo8(symbol)
+ENUM
+  BFD_RELOC_TARN_8_HI
+ENUMDOC
+  This is a 8 bit reloc for the tarn that stores bits 8..15 of a symbol
+  in .byte hi8(symbol)
+
+
 ENUM
   BFD_RELOC_AVR_7_PCREL
 ENUMDOC

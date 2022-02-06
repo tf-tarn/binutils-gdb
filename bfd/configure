@@ -14878,6 +14878,7 @@ do
     mn10300_elf32_vec)		 tb="$tb elf-m10300.lo elf32.lo $elf" ;;
     moxie_elf32_be_vec)		 tb="$tb elf32-moxie.lo elf32.lo $elf" ;;
     moxie_elf32_le_vec)		 tb="$tb elf32-moxie.lo elf32.lo $elf" ;;
+    tarn_elf32_vec)		 tb="$tb elf32-tarn.lo elf32.lo $elf" ;;
     msp430_elf32_vec)		 tb="$tb elf32-msp430.lo elf32.lo $elf" ;;
     msp430_elf32_ti_vec)	 tb="$tb elf32-msp430.lo elf32.lo $elf" ;;
     mt_elf32_vec)		 tb="$tb elf32-mt.lo elf32.lo $elf" ;;
@@ -19322,4 +19323,3 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
-

@@ -505,6 +505,10 @@ case "${targ}" in
     targ_selvecs=moxie_elf32_le_vec
     ;;
 
+  tarn-*-elf32)
+    targ_defvec=tarn_elf32_vec
+    ;;
+
   moxie-*-moxiebox*)
     targ_defvec=moxie_elf32_le_vec
     ;;
