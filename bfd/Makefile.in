@@ -145,7 +145,7 @@ ARFLAGS = cru
 AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
-am__v_AR_1 = 
+am__v_AR_1 =
 libbfd_a_AR = $(AR) $(ARFLAGS)
 libbfd_a_LIBADD =
 am_libbfd_a_OBJECTS =
@@ -192,7 +192,7 @@ libbfd_la_OBJECTS = $(am_libbfd_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
-am__v_lt_1 = 
+am__v_lt_1 =
 libbfd_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(libbfd_la_LDFLAGS) $(LDFLAGS) -o $@
@@ -205,11 +205,11 @@ am__v_P_1 = :
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN     " $@;
-am__v_GEN_1 = 
+am__v_GEN_1 =
 AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
-am__v_at_1 = 
+am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/../depcomp
 am__depfiles_maybe = depfiles
@@ -223,7 +223,7 @@ LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
+am__v_CC_1 =
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -231,7 +231,7 @@ LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
+am__v_CCLD_1 =
 SOURCES = $(libbfd_a_SOURCES) $(libbfd_la_SOURCES) \
 	$(EXTRA_libbfd_la_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
@@ -399,10 +399,10 @@ bfd_default_target_size = @bfd_default_target_size@
 bfd_file_ptr = @bfd_file_ptr@
 bfd_machines = @bfd_machines@
 bfd_ufile_ptr = @bfd_ufile_ptr@
-@INSTALL_LIBBFD_FALSE@bfdincludedir = 
+@INSTALL_LIBBFD_FALSE@bfdincludedir =
 @INSTALL_LIBBFD_TRUE@bfdincludedir = @bfdincludedir@
 # Empty these so that the respective installation directories will not be created.
-@INSTALL_LIBBFD_FALSE@bfdlibdir = 
+@INSTALL_LIBBFD_FALSE@bfdlibdir =
 @INSTALL_LIBBFD_TRUE@bfdlibdir = @bfdlibdir@
 bindir = @bindir@
 build = @build@
@@ -532,6 +532,7 @@ ALL_MACHINES = \
 	cpu-epiphany.lo \
 	cpu-fr30.lo \
 	cpu-frv.lo \
+	cpu-tarn.lo \
 	cpu-ft32.lo \
 	cpu-h8300.lo \
 	cpu-hppa.lo \
@@ -616,6 +617,7 @@ ALL_MACHINES_CFILES = \
 	cpu-epiphany.c \
 	cpu-fr30.c \
 	cpu-frv.c \
+	cpu-tarn.c \
 	cpu-ft32.c \
 	cpu-h8300.c \
 	cpu-hppa.c \
@@ -731,6 +733,7 @@ BFD32_BACKENDS = \
 	elf32-epiphany.lo \
 	elf32-fr30.lo \
 	elf32-frv.lo \
+	elf32-tarn.lo \
 	elf32-ft32.lo \
 	elf32-gen.lo \
 	elf32-h8300.lo \
@@ -864,6 +867,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-epiphany.c \
 	elf32-fr30.c \
 	elf32-frv.c \
+	elf32-tarn.c \
 	elf32-ft32.c \
 	elf32-gen.c \
 	elf32-h8300.c \
@@ -1152,7 +1156,7 @@ libbfd_la_LIBADD = `cat ofiles` @SHARED_LIBADD@ $(LIBDL) $(ZLIB)
 # libbfd.a simultaneously.  This is a hack which should be removed if
 # everything else starts using libtool.  FIXME.
 noinst_LIBRARIES = libbfd.a
-libbfd_a_SOURCES = 
+libbfd_a_SOURCES =
 BFD_H_DEPS = $(INCDIR)/ansidecl.h $(INCDIR)/symcat.h $(INCDIR)/diagnostics.h
 LOCAL_H_DEPS = libbfd.h sysdep.h config.h bfd_stdint.h
 BFD_H_FILES = bfd-in.h init.c opncls.c libbfd.c \
@@ -1216,7 +1220,7 @@ config.h: stamp-h1
 stamp-h1: $(srcdir)/config.in $(top_builddir)/config.status
 	@rm -f stamp-h1
 	cd $(top_builddir) && $(SHELL) ./config.status config.h
-$(srcdir)/config.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
+$(srcdir)/config.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	($(am__cd) $(top_srcdir) && $(AUTOHEADER))
 	rm -f stamp-h1
 	touch $@
@@ -1277,7 +1281,7 @@ clean-noinstLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
-libbfd.la: $(libbfd_la_OBJECTS) $(libbfd_la_DEPENDENCIES) $(EXTRA_libbfd_la_DEPENDENCIES) 
+libbfd.la: $(libbfd_la_OBJECTS) $(libbfd_la_DEPENDENCIES) $(EXTRA_libbfd_la_DEPENDENCIES)
 	$(AM_V_CCLD)$(libbfd_la_LINK) $(am_libbfd_la_rpath) $(libbfd_la_OBJECTS) $(libbfd_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
@@ -1338,6 +1342,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-epiphany.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-fr30.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-frv.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-tarn.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-ft32.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-h8300.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-hppa.Plo@am__quote@

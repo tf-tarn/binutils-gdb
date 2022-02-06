@@ -107,6 +107,7 @@ ALL_MACHINES = \
 	cpu-epiphany.lo \
 	cpu-fr30.lo \
 	cpu-frv.lo \
+	cpu-tarn.lo \
 	cpu-ft32.lo \
 	cpu-h8300.lo \
 	cpu-hppa.lo \
@@ -191,6 +192,7 @@ ALL_MACHINES_CFILES = \
 	cpu-epiphany.c \
 	cpu-fr30.c \
 	cpu-frv.c \
+	cpu-tarn.c \
 	cpu-ft32.c \
 	cpu-h8300.c \
 	cpu-hppa.c \
@@ -305,6 +307,7 @@ BFD32_BACKENDS = \
 	elf32-epiphany.lo \
 	elf32-fr30.lo \
 	elf32-frv.lo \
+	elf32-tarn.lo \
 	elf32-ft32.lo \
 	elf32-gen.lo \
 	elf32-h8300.lo \
@@ -438,6 +441,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-epiphany.c \
 	elf32-fr30.c \
 	elf32-frv.c \
+	elf32-tarn.c \
 	elf32-ft32.c \
 	elf32-gen.c \
 	elf32-h8300.c \
