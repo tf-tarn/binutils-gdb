@@ -2,7 +2,7 @@
 # Configuration validation subroutine script.
 #   Copyright 1992-2021 Free Software Foundation, Inc.
 
-timestamp='2021-01-07'
+timestamp='2022-02-06'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -1215,6 +1215,7 @@ case $cpu-$vendor in
 			| mmix \
 			| mn10200 | mn10300 \
 			| moxie \
+			| tarn \
 			| mt \
 			| msp430 \
 			| nds32 | nds32le | nds32be \
