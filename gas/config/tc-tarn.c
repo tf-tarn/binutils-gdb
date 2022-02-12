@@ -27,7 +27,7 @@
 
 #include <assert.h>
 
-extern const tarn_opc_info_t tarn_opc_info[128];
+extern const tarn_opc_info_t tarn_opc_info[256];
 
 const char comment_chars[]        = "#";
 const char line_separator_chars[] = ";";
@@ -62,13 +62,24 @@ md_begin (void)
   opcode_hash_control = str_htab_create ();
 
   /* Insert names into hash table.  */
-  for (count = 0, opcode = tarn_form1_opc_info; count++ < 64; opcode++)
-      str_hash_insert (opcode_hash_control, opcode->name, opcode, 0);
-
-  for (count = 0, opcode = tarn_form2_opc_info; count++ < 8; opcode++)
+  for (count = 0, opcode = tarn_opc_info; count++ < 256; opcode++)
       str_hash_insert (opcode_hash_control, opcode->name, opcode, 0);
 
   bfd_set_arch_mach (stdoutput, TARGET_ARCH, 0);
+}
+
+/* Parse an expression and then restore the input line pointer.  */
+
+static char *
+parse_exp_save_ilp (char *s, expressionS *op)
+{
+  char *save = input_line_pointer;
+
+  input_line_pointer = s;
+  expression (op);
+  s = input_line_pointer;
+  input_line_pointer = save;
+  return s;
 }
 
 /* This is the guts of the machine-dependent assembler.  STR points to
@@ -82,9 +93,10 @@ md_assemble (char *str)
   char *op_end;
 
   tarn_opc_info_t *opcode;
-  char *output;
-  int idx = 0;
+  char *p;
   char pend;
+
+  unsigned short iword = 0;
 
   int nlen = 0;
 
@@ -114,8 +126,29 @@ md_assemble (char *str)
       return;
     }
 
-  output = frag_more (1);
-  output[idx++] = opcode->opcode;
+  p = frag_more (1);
+
+  // Whatever the argument is, we know the opcode, so store that in
+  // the current fragment.
+  md_number_to_chars(p, opcode->opcode, 1);
+
+  {
+      // uh, save expression as a fixup/reloc?
+      expressionS arg;
+      char *where;
+      int regnum;
+
+      while (ISSPACE (*op_end)) op_end++;
+
+      op_end = parse_exp_save_ilp(op_end, &arg);
+      where = frag_more (1);
+      fix_new_exp (frag_now,
+                   (where - frag_now->fr_literal),
+                   1,
+                   &arg,
+                   0,
+                   BFD_RELOC_8);
+  }
 
   while (ISSPACE (*op_end))
     op_end++;
@@ -194,7 +227,28 @@ md_show_usage (FILE *stream ATTRIBUTE_UNUSED)
 void
 md_apply_fix (fixS *fixP ATTRIBUTE_UNUSED, valueT * valP ATTRIBUTE_UNUSED, segT seg ATTRIBUTE_UNUSED)
 {
-  /* Empty for now.  */
+  char *buf = fixP->fx_where + fixP->fx_frag->fr_literal;
+  long val = *valP;
+  long max, min;
+  int shift;
+
+  max = min = 0;
+  shift = 0;
+  switch (fixP->fx_r_type)
+    {
+    case BFD_RELOC_8:
+      *buf++ = val;
+      break;
+
+    default:
+      abort ();
+    }
+
+  if (max != 0 && (val < min || val > max))
+    as_bad_where (fixP->fx_file, fixP->fx_line, _("offset out of range"));
+
+  if (fixP->fx_addsy == NULL && fixP->fx_pcrel == 0)
+    fixP->fx_done = 1;
 }
 
 /* Put number into target byte order (big endian).  */
@@ -234,4 +288,24 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
     }
 
   return rel;
+}
+
+
+/* Decide from what point a pc-relative relocation is relative to,
+   relative to the pc-relative fixup.  Er, relatively speaking.  */
+long
+md_pcrel_from (fixS *fixP)
+{
+  valueT addr = fixP->fx_where + fixP->fx_frag->fr_address;
+
+  fprintf (stderr, "md_pcrel_from 0x%d\n", fixP->fx_r_type);
+
+  switch (fixP->fx_r_type)
+    {
+    case BFD_RELOC_8:
+      return addr + 1;
+    default:
+      abort();
+      return addr;
+    }
 }

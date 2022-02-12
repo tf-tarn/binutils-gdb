@@ -25,6 +25,7 @@
 /* Relocation types.  */
 START_RELOC_NUMBERS (elf_tarn_reloc_type)
   RELOC_NUMBER (R_TARN_NONE, 0)
+  RELOC_NUMBER (R_TARN_DIR8, 1)
 END_RELOC_NUMBERS (R_TARN_max)
 
 #endif

@@ -34,45 +34,23 @@ static void *stream;
 int
 print_insn_tarn (bfd_vma addr, struct disassemble_info *info)
 {
-  int status;
-  stream = info->stream;
-  const tarn_opc_info_t *opcode;
-  unsigned short iword;
-  fpr = info->fprintf_func;
+    int status;
+    stream = info->stream;
+    const tarn_opc_info_t *opcode;
+    bfd_byte buffer[2];
+    unsigned short iword;
+    fpr = info->fprintf_func;
 
-  if ((status = info->read_memory_func (addr, &iword, 2, info)))
-    goto fail;
+    if ((status = info->read_memory_func (addr, buffer, 2, info)))
+        goto fail;
+    iword = bfd_getb16(buffer);
 
-  /* Form 1 instructions have the high bit set to 0.  */
-  if ((iword & (1<<15)) == 0)
-    {
-      /* Extract the Form 1 opcode.  */
-      opcode = &tarn_form1_opc_info[iword >> 9];
-      switch (opcode->itype)
-	{
-	case TARN_F1_NARG:
-	  fpr (stream, "%s", opcode->name);
-	  break;
-	default:
-	  abort();
-	}
-    }
-  else /* this is a Form 2 instruction.  */
-    {
-      /* Extract the Form 2 opcode.  */
-      opcode = &tarn_form2_opc_info[(iword >> 12) & 7];
-      switch (opcode->itype)
-	{
-	case TARN_F2_NARG:
-	  fpr (stream, "%s", opcode->name);
-	  break;
-	default:
-	  abort();
-	}
-    }
- return 2;
+    opcode = &tarn_opc_info[iword >> 8];
+    fpr (stream, "%s\t0x%02x", opcode->name, iword & 0xff);
+
+    return 2; // returns length of the instruction
 
  fail:
-  info->memory_error_func (status, addr, info);
-  return -1;
+    info->memory_error_func (status, addr, info);
+    return -1;
 }

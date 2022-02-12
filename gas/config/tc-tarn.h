@@ -36,9 +36,13 @@
 #define md_estimate_size_before_relax(A, B) (as_fatal (_("estimate size\n")),0)
 #define md_convert_frag(B, S, F)            (as_fatal (_("convert_frag\n")), 0)
 
-/* PC relative operands are relative to the start of the opcode, and
-   the operand is always one byte into the opcode.  */
-#define md_pcrel_from(FIX) 						\
-	((FIX)->fx_where + (FIX)->fx_frag->fr_address - 1)
+/* If you define this macro, it should return the offset between the
+   address of a PC relative fixup and the position from which the PC
+   relative adjustment should be made.  On many processors, the base
+   of a PC relative instruction is the next instruction, so this
+   macro would return the length of an instruction.  */
+#define MD_PCREL_FROM_SECTION(FIX, SEC) md_pcrel_from (FIX)
+extern long md_pcrel_from (struct fix *);
+
 
 #define md_section_align(SEGMENT, SIZE)     (SIZE)

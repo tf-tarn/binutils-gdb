@@ -31,21 +31,21 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
     Some use the 12-bit immediate operand    (TARN_F2_12V)
 */
 
-#define TARN_F1_NARG 0x100
-#define TARN_F1_A    0x101
-#define TARN_F1_AB   0x102
-#define TARN_F1_ABC  0x103
-
-#define TARN_F2_NARG 0x200
-#define TARN_F2_12V  0x201
-
+/*
+  Instructions are of the form:
+  struct opcode {
+    unsigned src_register  : 4;
+    unsigned dest_register : 4;
+    unsigned literal       : 8; // loaded into IL
+  }
+ */
 
 typedef struct tarn_opc_info_t
 {
-  short opcode;
-  unsigned itype;
-  const char *name;
+    unsigned char opcode;
+    unsigned char from : 4;
+    unsigned char to : 4;
+    const char *name;
 } tarn_opc_info_t;
 
-extern const tarn_opc_info_t tarn_form1_opc_info[64];
-extern const tarn_opc_info_t tarn_form2_opc_info[8];
+extern const tarn_opc_info_t tarn_opc_info[256];
