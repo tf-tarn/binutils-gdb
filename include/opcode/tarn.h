@@ -48,4 +48,6 @@ typedef struct tarn_opc_info_t
     const char *name;
 } tarn_opc_info_t;
 
-extern const tarn_opc_info_t tarn_opc_info[256];
+#define TARN_OPC_COUNT 208
+
+extern const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT];

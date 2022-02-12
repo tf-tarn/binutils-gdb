@@ -27,7 +27,7 @@
 
 #include <assert.h>
 
-extern const tarn_opc_info_t tarn_opc_info[256];
+// extern const tarn_opc_info_t tarn_opc_info[256];
 
 const char comment_chars[]        = "#";
 const char line_separator_chars[] = ";";
@@ -62,7 +62,7 @@ md_begin (void)
   opcode_hash_control = str_htab_create ();
 
   /* Insert names into hash table.  */
-  for (count = 0, opcode = tarn_opc_info; count++ < 256; opcode++)
+  for (count = 0, opcode = tarn_opc_info; count++ < TARN_OPC_COUNT; opcode++)
       str_hash_insert (opcode_hash_control, opcode->name, opcode, 0);
 
   bfd_set_arch_mach (stdoutput, TARGET_ARCH, 0);
@@ -96,8 +96,6 @@ md_assemble (char *str)
   char *p;
   char pend;
 
-  unsigned short iword = 0;
-
   int nlen = 0;
 
   /* Drop leading whitespace.  */
@@ -122,7 +120,7 @@ md_assemble (char *str)
 
   if (opcode == NULL)
     {
-      as_bad (_("unknown opcode %s"), op_start);
+        as_bad (_("unknown opcode %s (%p, %lu)"), op_start, op_start, op_end - op_start);
       return;
     }
 
@@ -136,7 +134,6 @@ md_assemble (char *str)
       // uh, save expression as a fixup/reloc?
       expressionS arg;
       char *where;
-      int regnum;
 
       while (ISSPACE (*op_end)) op_end++;
 
@@ -230,10 +227,8 @@ md_apply_fix (fixS *fixP ATTRIBUTE_UNUSED, valueT * valP ATTRIBUTE_UNUSED, segT 
   char *buf = fixP->fx_where + fixP->fx_frag->fr_literal;
   long val = *valP;
   long max, min;
-  int shift;
 
   max = min = 0;
-  shift = 0;
   switch (fixP->fx_r_type)
     {
     case BFD_RELOC_8:

@@ -1026,7 +1026,7 @@ case "${target}" in
     noconfigdirs="$noconfigdirs"
     ;;
   tarn-*-*)
-    noconfigdirs="$noconfigdirs gdb gprof"
+    noconfigdirs="$noconfigdirs gdb"
     ;;
   h8300*-*-*)
     noconfigdirs="$noconfigdirs target-libgloss"

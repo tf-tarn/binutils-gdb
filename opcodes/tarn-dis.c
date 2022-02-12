@@ -36,7 +36,7 @@ print_insn_tarn (bfd_vma addr, struct disassemble_info *info)
 {
     int status;
     stream = info->stream;
-    const tarn_opc_info_t *opcode;
+    const tarn_opc_info_t *opcode = NULL;
     bfd_byte buffer[2];
     unsigned short iword;
     fpr = info->fprintf_func;
@@ -45,7 +45,16 @@ print_insn_tarn (bfd_vma addr, struct disassemble_info *info)
         goto fail;
     iword = bfd_getb16(buffer);
 
-    opcode = &tarn_opc_info[iword >> 8];
+    for (int i = 0; i < TARN_OPC_COUNT; ++i) {
+        if (iword >> 8 == tarn_opc_info[i].opcode) {
+            opcode = &tarn_opc_info[i];
+            break;
+        }
+    }
+    if (!opcode) {
+        abort();
+    }
+
     fpr (stream, "%s\t0x%02x", opcode->name, iword & 0xff);
 
     return 2; // returns length of the instruction
