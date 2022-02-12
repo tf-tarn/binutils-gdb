@@ -17,8 +17,35 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
 02110-1301, USA.  */
 
+/*
+  Form 1 instructions come in different flavors:
+
+    Some have no arguments              (TARN_F1_NARG)
+    Some only use the A operand         (TARN_F1_A)
+    Some use A and B registers          (TARN_F1_AB)
+    Some use A, B and C registers       (TARN_F1_ABC)
+
+  Form 2 instructions also come in different flavors:
+
+    Some ignore the 12-bit immediate operand (TARN_F2_NARG)
+    Some use the 12-bit immediate operand    (TARN_F2_12V)
+*/
+
+#define TARN_F1_NARG 0x100
+#define TARN_F1_A    0x101
+#define TARN_F1_AB   0x102
+#define TARN_F1_ABC  0x103
+
+#define TARN_F2_NARG 0x200
+#define TARN_F2_12V  0x201
+
+
 typedef struct tarn_opc_info_t
 {
   short opcode;
+  unsigned itype;
   const char *name;
 } tarn_opc_info_t;
+
+extern const tarn_opc_info_t tarn_form1_opc_info[64];
+extern const tarn_opc_info_t tarn_form2_opc_info[8];

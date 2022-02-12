@@ -28,8 +28,6 @@
 #include "opcode/tarn.h"
 #include "dis-asm.h"
 
-extern const tarn_opc_info_t tarn_opc_info[128];
-
 static fprintf_ftype fpr;
 static void *stream;
 
@@ -38,15 +36,41 @@ print_insn_tarn (bfd_vma addr, struct disassemble_info *info)
 {
   int status;
   stream = info->stream;
-  unsigned char opcode;
+  const tarn_opc_info_t *opcode;
+  unsigned short iword;
   fpr = info->fprintf_func;
 
-  if ((status = info->read_memory_func (addr, &opcode, 1, info)))
+  if ((status = info->read_memory_func (addr, &iword, 2, info)))
     goto fail;
 
-  fpr (stream, "%s", tarn_opc_info[opcode].name);
-
-  return 1;
+  /* Form 1 instructions have the high bit set to 0.  */
+  if ((iword & (1<<15)) == 0)
+    {
+      /* Extract the Form 1 opcode.  */
+      opcode = &tarn_form1_opc_info[iword >> 9];
+      switch (opcode->itype)
+	{
+	case TARN_F1_NARG:
+	  fpr (stream, "%s", opcode->name);
+	  break;
+	default:
+	  abort();
+	}
+    }
+  else /* this is a Form 2 instruction.  */
+    {
+      /* Extract the Form 2 opcode.  */
+      opcode = &tarn_form2_opc_info[(iword >> 12) & 7];
+      switch (opcode->itype)
+	{
+	case TARN_F2_NARG:
+	  fpr (stream, "%s", opcode->name);
+	  break;
+	default:
+	  abort();
+	}
+    }
+ return 2;
 
  fail:
   info->memory_error_func (status, addr, info);
