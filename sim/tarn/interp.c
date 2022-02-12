@@ -27,6 +27,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 #include "libiberty.h"
 #include "gdb/remote-sim.h"
 
+#include "sim-main.h"
+/* #include "sim-base.h" */
+/* #include "sim-options.h" */
+/* #include "sim-io.h" */
+
 typedef int word;
 
 static unsigned long  heap_ptr = 0;
@@ -56,19 +61,16 @@ tarn_extract_unsigned_integer (addr, len)
   return retval;
 }
 
-void
-tarn_store_unsigned_integer (addr, len, val)
-     unsigned char * addr;
-     int len;
-     unsigned long val;
+static void
+tarn_store_unsigned_integer (unsigned char *addr, int len, unsigned long val)
 {
   unsigned char * p;
   unsigned char * startaddr = (unsigned char *)addr;
   unsigned char * endaddr = startaddr + len;
 
-  for (p = startaddr; p < endaddr;)
+  for (p = endaddr; p > startaddr;)
     {
-      * p ++ = val & 0xff;
+      * -- p = val & 0xff;
       val >>= 8;
     }
 }
@@ -82,70 +84,37 @@ tarn_store_unsigned_integer (addr, len, val)
    data in native order improves the performance of the simulator.
    Simulation speed is deemed more important.  */
 
-#define NUM_TARN_REGS 8
+#define NUM_TARN_REGS 16
 
-/* The ordering of the tarn_regset structure is matched in the
-   gdb/config/tarn/tm-tarn.h file in the REGISTER_NAMES macro.  */
-struct tarn_regset
-{
-  word		  regs[NUM_TARN_REGS];	/* primary registers */
-  word		  pc;			/* the program counter */
-  int		  exception;
-  unsigned long   msize;
-  unsigned char * memory;
-  unsigned long   insts;                /* instruction counter */
-};
+/* /\* The ordering of the tarn_regset structure is matched in the */
+/*    gdb/config/tarn/tm-tarn.h file in the REGISTER_NAMES macro.  *\/ */
+/* struct tarn_regset */
+/* { */
+/*   unsigned char	  regs[NUM_TARN_REGS];	/\* primary registers *\/ */
+/*   word		  pc;			/\* the program counter *\/ */
+/*   int		  exception; */
+/*   unsigned long   msize; */
+/*   unsigned long   insts;                /\* instruction counter *\/ */
+/* }; */
 
-union
-{
-  struct tarn_regset asregs;
-  word asints [1];		/* but accessed larger... */
-} cpu;
+/* union */
+/* { */
+/*   struct tarn_regset asregs; */
+/*   word asints [1];		/\* but accessed larger... *\/ */
+/* } _cpu; */
 
 static char *myname;
 static SIM_OPEN_KIND sim_kind;
 static int issue_messages = 0;
 
-/* Default to a 8 Mbyte (== 2^23) memory space.  */
-static int sim_memory_size = 23;
+SIM_CPU *cpu;
 
-#define	MEM_SIZE_FLOOR	64
-void
-sim_size (power)
-     int power;
-{
-  sim_memory_size = power;
-  cpu.asregs.msize = 1 << sim_memory_size;
-
-  if (cpu.asregs.memory)
-    free (cpu.asregs.memory);
-
-  /* Watch out for the '0 count' problem. There's probably a better
-     way.. e.g., why do we use 64 here?  */
-  if (cpu.asregs.msize < 64)	/* Ensure a boundary.  */
-    cpu.asregs.memory = (unsigned char *) calloc (64, (64 + cpu.asregs.msize) / 64);
-  else
-    cpu.asregs.memory = (unsigned char *) calloc (64, cpu.asregs.msize / 64);
-
-  if (!cpu.asregs.memory)
-    {
-      if (issue_messages)
-	fprintf (stderr,
-		 "Not enough VM for simulation of %d bytes of RAM\n",
-		 cpu.asregs.msize);
-
-      cpu.asregs.msize = 1;
-      cpu.asregs.memory = (unsigned char *) calloc (1, 1);
-    }
-}
-
-static void
-init_pointers ()
-{
-  if (cpu.asregs.msize != (1 << sim_memory_size))
-    sim_size (sim_memory_size);
-}
-
+/* static void */
+/* init_pointers () */
+/* { */
+/*   if (cpu.asregs.msize != (1 << sim_memory_size)) */
+/*     sim_size (sim_memory_size); */
+/* } */
 
 static void
 set_initial_gprs ()
@@ -154,149 +123,201 @@ set_initial_gprs ()
   long space;
   unsigned long memsize;
 
-  init_pointers ();
-
   /* Set up machine just out of reset.  */
-  cpu.asregs.pc = 0;
-
-  memsize = cpu.asregs.msize / (1024 * 1024);
-
-  if (issue_messages > 1)
-    fprintf (stderr, "Simulated memory of %d Mbytes (0x0 .. 0x%08x)\n",
-	     memsize, cpu.asregs.msize - 1);
+  cpu->pc = 0;
 
   /* Clean out the register contents.  */
   for (i = 0; i < NUM_TARN_REGS; i++)
-    cpu.asregs.regs[i] = 0;
+    cpu->registers[i] = 0;
 }
 
 static void
 interrupt ()
 {
-  cpu.asregs.exception = SIGINT;
+  cpu->exception = SIGINT;
 }
 
-static int tracing = 0;
+static int tracing = 1;
+
+const char *from_registers[] = {
+    "NOP",
+    "P0",
+    "INTL",
+    "INTH",
+    "RETI",
+    "IL",
+    "STACK",
+    "PIC",
+    "<bad register number>",
+    "<bad register number>",
+    "MEM",
+    "R",
+    "<bad register number>",
+    "ZERO",
+    "ONE",
+    "ALUC"
+};
+
+const char *to_registers[] = {
+    "NOP",
+    "P0",
+    "JMPL",
+    "JMPH",
+    "JUMP",
+    "JNZ",
+    "STACK",
+    "PIC",
+    "ADL",
+    "ADH",
+    "MEM",
+    "R",
+    "BS",
+    "ALUSEL",
+    "ALUA",
+    "ALUB"
+};
+
+
+/* Read 2 bytes from memory.  */
+static INLINE int
+rsat (sim_cpu *scpu, unsigned short pc, word x)
+{
+  address_word cia = CPU_PC_GET (scpu);
+
+  return (sim_core_read_aligned_2 (scpu, cia, read_map, x));
+}
 
 void
 sim_resume (sd, step, siggnal)
      SIM_DESC sd;
      int step, siggnal;
 {
-  word pc, opc;
+  unsigned short pc, opc;
   unsigned long insts;
   unsigned short inst;
+  unsigned char inst_h;
+  unsigned char inst_l;
+  unsigned char reg_src;
+  unsigned char reg_dest;
   void (* sigsave)();
 
   sigsave = signal (SIGINT, interrupt);
-  cpu.asregs.exception = step ? SIGTRAP: 0;
-  pc = cpu.asregs.pc;
-  insts = cpu.asregs.insts;
-  unsigned char *memory = cpu.asregs.memory;
-
+  cpu->exception = step ? SIGTRAP: 0;
+  pc = cpu->pc;
+  insts = cpu->insts;
   /* Run instructions here. */
 
   if (tracing)
-    callback->printf_filtered (callback, "# set pc to 0x%x\n",
-			       pc);
+      printf("# set pc to 0x%04x\n",
+             pc);
 
   do
     {
       opc = pc;
+      inst = rsat(cpu, pc, pc);
+      inst_h = inst >> 8;
+      inst_l = inst & 0xff;
+
+      printf("# at 0x%04x: %02x %02x\n", pc, inst_h, inst_l);
 
       /* Fetch the instruction at pc.  */
-      inst = (memory[pc] << 8) + memory[pc + 1];
+      reg_src = inst_h >> 4;
+      reg_dest = inst_h & 0xf;
 
-      /* Decode instruction.  */
-      if (inst & (1 << 15))
-	{
-	  /* This is a Form 2 instruction.  */
-	  /* We haven't implemented any yet, so just SIGILL for now.  */
-	  cpu.asregs.exception = SIGILL;
-	  break;
-	}
-      else
-	{
-	  /* This is a Form 1 instruction.  */
-	  int opcode = inst >> 9;
-	  switch (opcode)
-	    {
-	    case 0x00: /* ld.w (immediate) */
-	      {
-		int reg = (inst >> 6) & 0x7;
+      // Low instruction byte is loaded into IL (0x5)
+      cpu->registers[0x5] = inst_l;
 
-		unsigned int val = ((memory[pc + 2] << 24)
-				    + (memory[pc + 3] << 16)
-				    + (memory[pc + 4] << 8)
-				    + (memory[pc + 5]));
-		cpu.asregs.regs[reg] = val;
-		pc += 4;
 
-		if (tracing)
-		  callback->printf_filtered (callback,
-					     "# 0x%08x: $r%d = 0x%x\n",
-					     opc, reg, val);
-	      }
-	      break;
-	    case 0x01: /* mov (register-to-register) */
-	      {
-		int dest  = (inst >> 6) & 0x7;
-		int src = (inst >> 3) & 0x7;
-		cpu.asregs.regs[dest] = cpu.asregs.regs[src];
+      if (reg_src == 0 && reg_dest == 0) { // NOP
+          // do nothing
+          printf("# 0x%04x: NOP\n", opc);
+          pc += 2;
+      } else if (reg_src == 0x4) { // JUMP
+          if (reg_dest != 0) {
+              cpu->exception = SIGILL;
+              break;
+          } else {
+              pc = (cpu->registers[3] << 8) + cpu->registers[2];
+              printf("# 0x%04x: jump to %04x\n",
+                     opc, pc);
+          }
+      } else if (reg_src == 0x5) { // JNZ
+          cpu->exception = SIGILL;
+          break;
+      } else if (reg_dest == 0x4) { // RETI
+          cpu->exception = SIGILL;
+          break;
+      } else {
+          // Execute generic instruction.
+          // TODO: implement adder and stuff .....
+          cpu->registers[reg_dest] = cpu->registers[reg_src];
+          printf("# 0x%04x: send %s to %s\n",
+                 opc, from_registers[reg_src], to_registers[reg_dest]);
+          pc += 2;
+      }
 
-		if (tracing)
-		  callback->printf_filtered (callback,
-					     "# 0x%08x: $r%d = $r%d (0x%x)\n",
-					     opc, dest, src, cpu.asregs.regs[src]);
-	      }
-	      break;
-	    default:
-	      cpu.asregs.exception = SIGILL;
-	      break;
-	    }
-	}
+
+
+      /* /\* Decode instruction.  *\/ */
+      /* if (inst & (1 << 15)) */
+      /*   { */
+      /*     /\* This is a Form 2 instruction.  *\/ */
+      /*     /\* We haven't implemented any yet, so just SIGILL for now.  *\/ */
+      /*     cpu->exception = SIGILL; */
+      /*     break; */
+      /*   } */
+      /* else */
+      /*   { */
+      /*     /\* This is a Form 1 instruction.  *\/ */
+      /*     int opcode = inst >> 9; */
+      /*     switch (opcode) */
+      /*       { */
+      /*       case 0x00: /\* ld.w (immediate) *\/ */
+      /*         { */
+      /*   	int reg = (inst >> 6) & 0x7; */
+
+      /*   	unsigned int val = ((memory[pc + 2] << 24) */
+      /*   			    + (memory[pc + 3] << 16) */
+      /*   			    + (memory[pc + 4] << 8) */
+      /*   			    + (memory[pc + 5])); */
+      /*   	cpu->registers[reg] = val; */
+      /*   	pc += 4; */
+
+      /*   	if (tracing) */
+      /*   	  callback->printf_filtered (callback, */
+      /*   				     "# 0x%08x: $r%d = 0x%x\n", */
+      /*   				     opc, reg, val); */
+      /*         } */
+      /*         break; */
+      /*       case 0x01: /\* mov (register-to-register) *\/ */
+      /*         { */
+      /*   	int dest  = (inst >> 6) & 0x7; */
+      /*   	int src = (inst >> 3) & 0x7; */
+      /*   	cpu->registers[dest] = cpu->registers[src]; */
+
+      /*   	if (tracing) */
+      /*   	  callback->printf_filtered (callback, */
+      /*   				     "# 0x%08x: $r%d = $r%d (0x%x)\n", */
+      /*   				     opc, dest, src, cpu->registers[src]); */
+      /*         } */
+      /*         break; */
+      /*       default: */
+      /*         cpu->exception = SIGILL; */
+      /*         break; */
+      /*       } */
+      /*   } */
 
       insts++;
-      pc += 2;
 
-    } while (!cpu.asregs.exception);
+    } while (!cpu->exception);
 
   /* Hide away the things we've cached while executing.  */
-  cpu.asregs.pc = pc;
-  cpu.asregs.insts += insts;		/* instructions done ... */
+  cpu->pc = pc;
+  cpu->insts += insts;		/* instructions done ... */
 
   signal (SIGINT, sigsave);
 }
 
-int
-sim_write (sd, addr, buffer, size)
-     SIM_DESC sd;
-     SIM_ADDR addr;
-     unsigned char * buffer;
-     int size;
-{
-  int i;
-  init_pointers ();
-
-  memcpy (& cpu.asregs.memory[addr], buffer, size);
-
-  return size;
-}
-
-int
-sim_read (sd, addr, buffer, size)
-     SIM_DESC sd;
-     SIM_ADDR addr;
-     unsigned char * buffer;
-     int size;
-{
-  int i;
-  init_pointers ();
-
-  memcpy (buffer, & cpu.asregs.memory[addr], size);
-
-  return size;
-}
 
 
 int
@@ -306,20 +327,20 @@ sim_store_register (sd, rn, memory, length)
      unsigned char * memory;
      int length;
 {
-  init_pointers ();
+    //init_pointers ();
 
   if (rn < NUM_TARN_REGS && rn >= 0)
     {
-      if (length == 4)
+      if (length == 1)
 	{
 	  long ival;
 
 	  /* misalignment safe */
-	  ival = tarn_extract_unsigned_integer (memory, 4);
-	  cpu.asints[rn] = ival;
+	  ival = tarn_extract_unsigned_integer (memory, 1);
+          cpu->registers[rn] = ival;
 	}
 
-      return 4;
+      return 1;
     }
   else
     return 0;
@@ -332,16 +353,16 @@ sim_fetch_register (sd, rn, memory, length)
      unsigned char * memory;
      int length;
 {
-  init_pointers ();
+    //init_pointers ();
 
   if (rn < NUM_TARN_REGS && rn >= 0)
     {
-      if (length == 4)
+      if (length == 1)
 	{
-	  long ival = cpu.asints[rn];
+	  long ival = cpu->registers[rn];
 
 	  /* misalignment-safe */
-	  tarn_store_unsigned_integer (memory, 4, ival);
+	  tarn_store_unsigned_integer (memory, 1, ival);
 	}
 
       return 4;
@@ -368,155 +389,159 @@ sim_trace (sd)
 #define PARM2 2
 #define PARM3 3
 
-void
-sim_stop_reason (sd, reason, sigrc)
-     SIM_DESC sd;
-     enum sim_stop * reason;
-     int * sigrc;
+
+static int
+tarn_reg_store (SIM_CPU *scpu, int rn, unsigned char *memory, int length)
 {
-  if (cpu.asregs.exception == SIGQUIT)
+  if (rn < NUM_TARN_REGS && rn >= 0)
     {
-      * reason = sim_exited;
-      * sigrc = cpu.asregs.regs[PARM1];
+      if (length == 1)
+	{
+	  long ival;
+
+	  /* misalignment safe */
+	  ival = tarn_extract_unsigned_integer (memory, 1);
+	  cpu->registers[rn] = ival;
+	}
+
+      return 1;
     }
   else
+    return 0;
+}
+
+static int
+tarn_reg_fetch (SIM_CPU *scpu, int rn, unsigned char *memory, int length)
+{
+  if (rn < NUM_TARN_REGS && rn >= 0)
     {
-      * reason = sim_stopped;
-      * sigrc = cpu.asregs.exception;
+      if (length == 1)
+	{
+	  long ival = cpu->registers[rn];
+
+	  /* misalignment-safe */
+	  tarn_store_unsigned_integer (memory, 1, ival);
+	}
+
+      return 1;
     }
+  else
+    return 0;
 }
 
-
-int
-sim_stop (sd)
-     SIM_DESC sd;
+static sim_cia
+tarn_pc_get (sim_cpu *cpu)
 {
-  cpu.asregs.exception = SIGINT;
-  return 1;
+  return cpu->pc;
 }
 
-
-void
-sim_info (sd, verbose)
-     SIM_DESC sd;
-     int verbose;
+static void
+tarn_pc_set (sim_cpu *cpu, sim_cia pc)
 {
-  callback->printf_filtered (callback, "\n\n# instructions executed  %10d\n",
-			     cpu.asregs.insts);
+    cpu->registers[18] = pc;
 }
 
+static void
+free_state (SIM_DESC sd)
+{
+  if (STATE_MODULES (sd) != NULL)
+    sim_module_uninstall (sd);
+  sim_cpu_free_all (sd);
+  sim_state_free (sd);
+}
 
 SIM_DESC
-sim_open (kind, cb, abfd, argv)
-     SIM_OPEN_KIND kind;
-     host_callback * cb;
-     struct bfd * abfd;
-     char ** argv;
+sim_open (SIM_OPEN_KIND kind, host_callback *cb,
+	  struct bfd *abfd, char * const *argv)
 {
-  int osize = sim_memory_size;
-  myname = argv[0];
-  callback = cb;
+  int i;
+  SIM_DESC sd = sim_state_alloc (kind, cb);
+  SIM_ASSERT (STATE_MAGIC (sd) == SIM_MAGIC_NUMBER);
 
-  if (kind == SIM_OPEN_STANDALONE)
-    issue_messages = 1;
+  /* The cpu data is kept in a separately allocated chunk of memory.  */
+  if (sim_cpu_alloc_all (sd, 1, /*cgen_cpu_max_extra_bytes ()*/0) != SIM_RC_OK)
+    {
+      free_state (sd);
+      return 0;
+    }
 
-  /* Discard and reacquire memory -- start with a clean slate.  */
-  sim_size (1);		/* small */
-  sim_size (osize);	/* and back again */
+  STATE_WATCHPOINTS (sd)->pc = &cpu->pc;
+  STATE_WATCHPOINTS (sd)->sizeof_pc = sizeof (unsigned short);
 
-  set_initial_gprs ();	/* Reset the GPR registers.  */
+  if (sim_pre_argv_init (sd, argv[0]) != SIM_RC_OK)
+    {
+      free_state (sd);
+      return 0;
+    }
 
-  /* Fudge our descriptor for now.  */
-  return (SIM_DESC) 1;
+  /* The parser will print an error message for us, so we silently return.  */
+  if (sim_parse_args (sd, argv) != SIM_RC_OK)
+    {
+      free_state (sd);
+      return 0;
+    }
+
+  // sim_do_command(sd," memory region 0x0000,0x8000") ;
+  // sim_do_command(sd," memory region 0xE0000000,0x10000") ;
+
+  /* Check for/establish the a reference program image.  */
+  if (sim_analyze_program (sd,
+			   (STATE_PROG_ARGV (sd) != NULL
+			    ? *STATE_PROG_ARGV (sd)
+			    : NULL), abfd) != SIM_RC_OK)
+    {
+      free_state (sd);
+      return 0;
+    }
+
+  /* Configure/verify the target byte order and other runtime
+     configuration options.  */
+  if (sim_config (sd) != SIM_RC_OK)
+    {
+      sim_module_uninstall (sd);
+      return 0;
+    }
+
+  if (sim_post_argv_init (sd) != SIM_RC_OK)
+    {
+      /* Uninstall the modules to avoid memory leaks,
+	 file descriptor leaks, etc.  */
+      sim_module_uninstall (sd);
+      return 0;
+    }
+
+  /* CPU specific initialization.  */
+  for (i = 0; i < MAX_NR_PROCESSORS; ++i)
+    {
+      cpu = STATE_CPU (sd, i);
+
+      CPU_REG_FETCH (cpu) = tarn_reg_fetch;
+      CPU_REG_STORE (cpu) = tarn_reg_store;
+      CPU_PC_FETCH (cpu) = tarn_pc_get;
+      CPU_PC_STORE (cpu) = tarn_pc_set;
+
+      set_initial_gprs (cpu);	/* Reset the GPR registers.  */
+    }
+
+  return sd;
 }
 
-void
-sim_close (sd, quitting)
-     SIM_DESC sd;
-     int quitting;
+
+/* Write a 2 byte value to memory.  */
+static INLINE void
+wsat (sim_cpu *scpu, word pc, word x, word v)
 {
-  /* nothing to do */
-}
+  address_word cia = CPU_PC_GET (scpu);
 
-SIM_RC
-sim_load (sd, prog, abfd, from_tty)
-     SIM_DESC sd;
-     char * prog;
-     bfd * abfd;
-     int from_tty;
-{
-
-  /* Do the right thing for ELF executables; this turns out to be
-     just about the right thing for any object format that:
-       - we crack using BFD routines
-       - follows the traditional UNIX text/data/bss layout
-       - calls the bss section ".bss".   */
-
-  extern bfd * sim_load_file (); /* ??? Don't know where this should live.  */
-  bfd * prog_bfd;
-
-  {
-    bfd * handle;
-    asection * s_bss;
-    handle = bfd_openr (prog, 0);	/* could be "tarn" */
-
-    if (!handle)
-      {
-	printf("``%s'' could not be opened.\n", prog);
-	return SIM_RC_FAIL;
-      }
-
-    /* Makes sure that we have an object file, also cleans gets the
-       section headers in place.  */
-    if (!bfd_check_format (handle, bfd_object))
-      {
-	/* wasn't an object file */
-	bfd_close (handle);
-	printf ("``%s'' is not appropriate object file.\n", prog);
-	return SIM_RC_FAIL;
-      }
-
-    /* Look for that bss section.  */
-    s_bss = bfd_get_section_by_name (handle, ".bss");
-
-    if (!s_bss)
-      {
-	printf("``%s'' has no bss section.\n", prog);
-	return SIM_RC_FAIL;
-      }
-
-    /* Appropriately paranoid would check that we have
-       a traditional text/data/bss ordering within memory.  */
-
-    /* figure the end of the bss section */
-    heap_ptr = ((unsigned long) bfd_get_section_vma (handle, s_bss)
-		+ (unsigned long) bfd_section_size (handle, s_bss));
-
-    /* Clean up after ourselves.  */
-    bfd_close (handle);
-
-    /* XXX: do we need to free the s_bss and handle structures? */
-  }
-
-  /* from sh -- dac */
-  prog_bfd = sim_load_file (sd, myname, callback, prog, abfd,
-                            sim_kind == SIM_OPEN_DEBUG,
-                            0, sim_write);
-  if (prog_bfd == NULL)
-    return SIM_RC_FAIL;
-
-  if (abfd == NULL)
-    bfd_close (prog_bfd);
-
-  return SIM_RC_OK;
+  sim_core_write_aligned_2 (scpu, cia, write_map, x, v);
 }
 
 SIM_RC
 sim_create_inferior (sd, prog_bfd, argv, env)
      SIM_DESC sd;
      struct bfd * prog_bfd;
-     char ** argv;
-     char ** env;
+     char * const* argv;
+     char * const* env;
 {
   char ** avp;
   int l;
@@ -527,7 +552,49 @@ sim_create_inferior (sd, prog_bfd, argv, env)
   set_initial_gprs ();
   issue_messages = l;
 
-  cpu.asregs.pc = bfd_get_start_address (prog_bfd);
+  int argc, i, tp;
+  sim_cpu *scpu = STATE_CPU (sd, 0); /* FIXME */
+
+  if (prog_bfd != NULL) {
+      cpu->pc = bfd_get_start_address (prog_bfd);
+      printf("start addr is %04x\n", cpu->pc);
+  }
+
+  /* /\* Copy args into target memory.  *\/ */
+  /* avp = argv; */
+  /* for (argc = 0; avp && *avp; avp++) */
+  /*     argc++; */
+
+  /* /\* Target memory looks like this: */
+  /*    0x00000000 zero word */
+  /*    0x00000002 argc word */
+  /*    0x00000004 start of argv */
+  /*    . */
+  /*    0x0000???? end of argv */
+  /*    0x0000???? zero word */
+  /*    0x0000???? start of data pointed to by argv  *\/ */
+
+  /* wsat (scpu, 0, 0, 0); */
+  /* wsat (scpu, 0, 2, argc); */
+
+  /* /\* tp is the offset of our first argv data.  *\/ */
+  /* tp = 2 + 2 + argc * 2 + 2; */
+
+  /* for (i = 0; i < argc; i++) */
+  /*     { */
+  /*         /\* Set the argv value.  *\/ */
+  /*         wsat (scpu, 0, 2 + 2 + i * 2, tp); */
+
+  /*         /\* Store the string.  *\/ */
+  /*         sim_core_write_buffer (sd, scpu, write_map, argv[i], */
+  /*                                tp, strlen(argv[i])+1); */
+  /*         tp += strlen (argv[i]) + 1; */
+  /*     } */
+
+  /* wsat (scpu, 0, 2 + 2 + i * 2, 0); */
+
+  load_dtb (sd, DTB);
+
 
   return SIM_RC_OK;
 }
@@ -542,7 +609,7 @@ sim_kill (sd)
 void
 sim_do_command (sd, cmd)
      SIM_DESC sd;
-     char * cmd;
+     const char * cmd;
 {
   /* Nothing there yet; it's all an error.  */
 
