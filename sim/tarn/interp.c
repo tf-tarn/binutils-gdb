@@ -593,7 +593,7 @@ sim_create_inferior (sd, prog_bfd, argv, env)
 
   /* wsat (scpu, 0, 2 + 2 + i * 2, 0); */
 
-  load_dtb (sd, DTB);
+  //  load_dtb (sd, DTB);
 
 
   return SIM_RC_OK;
