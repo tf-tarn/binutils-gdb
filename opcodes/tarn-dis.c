@@ -45,17 +45,68 @@ print_insn_tarn (bfd_vma addr, struct disassemble_info *info)
         goto fail;
     iword = bfd_getb16(buffer);
 
+
+    /*
+  if (opcode->inst_id == TARN_NOP) {
+      // Allocate space in the fragment for the opcode.
+      p = frag_more (2);
+      md_number_to_chars(p, 0, 2);
+      return;
+  }
+
+  if (opcode->inst_id == TARN_JUMP) {
+      // Allocate space in the fragment for the opcode.
+      p = frag_more (2);
+      md_number_to_chars(p, 0x0400, 2);
+      return;
+  }
+
+  if (opcode->inst_id == TARN_JNZ) {
+      // Allocate space in the fragment for the opcode.
+      p = frag_more (2);
+      md_number_to_chars(p, 0x0500, 2);
+      return;
+  }
+
+  if (opcode->inst_id == TARN_RETI) {
+      // Allocate space in the fragment for the opcode.
+      p = frag_more (2);
+      md_number_to_chars(p, 0x4000, 2);
+      return;
+  }
+
+     */
+
     for (int i = 0; i < TARN_OPC_COUNT; ++i) {
-        if (iword >> 8 == tarn_opc_info[i].opcode) {
+        if (tarn_opc_info[i].fixed >= 0 && iword == tarn_opc_info[i].fixed) {
             opcode = &tarn_opc_info[i];
             break;
         }
     }
-    if (!opcode) {
-        abort();
-    }
 
-    fpr (stream, "%s\t0x%02x", opcode->name, iword & 0xff);
+    if (!opcode) {
+        opcode = &tarn_opc_info[TARN_OPC_COUNT - 1];
+        unsigned char sreg = (iword >> 8) >> 4;
+        unsigned char dreg = (iword >> 8) & 0xf;
+        const char *sreg_name = "(unknown src reg)";
+        const char *dreg_name = "(unknown dest reg)";
+        for (int i = 0; i < TARN_SRC_REG_COUNT; ++i) {
+            if (sreg == tarn_src_registers[i].num) {
+                sreg_name = tarn_src_registers[i].name;
+                break;
+            }
+        }
+        for (int i = 0; i < TARN_DEST_REG_COUNT; ++i) {
+            if (dreg == tarn_dest_registers[i].num) {
+                dreg_name = tarn_dest_registers[i].name;
+                break;
+            }
+        }
+        fpr (stream, "%s\t%s\t%s\t,0x%02x",
+             opcode->name, sreg_name, dreg_name, iword & 0xff);
+    } else {
+        fpr (stream, "%s", opcode->name);
+    }
 
     return 2; // returns length of the instruction
 

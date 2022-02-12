@@ -35,6 +35,8 @@ const char line_comment_chars[]   = "#";
 
 static int pending_reloc;
 static htab_t opcode_hash_control;
+static htab_t src_reg_hash_control;
+static htab_t dest_reg_hash_control;
 
 const pseudo_typeS md_pseudo_table[] =
 {
@@ -60,10 +62,19 @@ md_begin (void)
   int count;
   const tarn_opc_info_t *opcode;
   opcode_hash_control = str_htab_create ();
+  src_reg_hash_control = str_htab_create ();
+  dest_reg_hash_control = str_htab_create ();
 
   /* Insert names into hash table.  */
   for (count = 0, opcode = tarn_opc_info; count++ < TARN_OPC_COUNT; opcode++)
       str_hash_insert (opcode_hash_control, opcode->name, opcode, 0);
+
+  tarn_reg_list_entry_t *entry;
+  for (count = 0, entry = tarn_src_registers; count++ < TARN_SRC_REG_COUNT; entry++)
+      str_hash_insert (src_reg_hash_control, entry->name, entry, 0);
+
+  for (count = 0, entry = tarn_dest_registers; count++ < TARN_DEST_REG_COUNT; entry++)
+      str_hash_insert (dest_reg_hash_control, entry->name, entry, 0);
 
   bfd_set_arch_mach (stdoutput, TARGET_ARCH, 0);
 }
@@ -104,9 +115,7 @@ md_assemble (char *str)
 
   /* Find the op code end.  */
   op_start = str;
-  for (op_end = str;
-       *op_end && !is_end_of_line[*op_end & 0xff] && *op_end != ' ';
-       op_end++)
+  for (op_end = str; *op_end && !is_end_of_line[*op_end & 0xff] && *op_end != ' '; ++op_end)
     nlen++;
 
   pend = *op_end;
@@ -118,37 +127,113 @@ md_assemble (char *str)
   opcode = (tarn_opc_info_t *) str_hash_find (opcode_hash_control, op_start);
   *op_end = pend;
 
-  if (opcode == NULL)
-    {
-        as_bad (_("unknown opcode %s (%p, %lu)"), op_start, op_start, op_end - op_start);
+  if (opcode == NULL) {
+      as_bad (_("unknown opcode %s (%p, %lu)"), op_start, op_start, op_end - op_start);
       return;
-    }
-
-  p = frag_more (1);
-
-  // Whatever the argument is, we know the opcode, so store that in
-  // the current fragment.
-  md_number_to_chars(p, opcode->opcode, 1);
-
-  {
-      // uh, save expression as a fixup/reloc?
-      expressionS arg;
-      char *where;
-
-      while (ISSPACE (*op_end)) op_end++;
-
-      op_end = parse_exp_save_ilp(op_end, &arg);
-      where = frag_more (1);
-      fix_new_exp (frag_now,
-                   (where - frag_now->fr_literal),
-                   1,
-                   &arg,
-                   0,
-                   BFD_RELOC_8);
   }
 
-  while (ISSPACE (*op_end))
-    op_end++;
+  if (opcode->opcode == TARN_NOP) {
+      // Allocate space in the fragment for the opcode.
+      p = frag_more (2);
+      md_number_to_chars(p, 0, 2);
+      return;
+  }
+
+  if (opcode->opcode == TARN_JUMP) {
+      // Allocate space in the fragment for the opcode.
+      p = frag_more (2);
+      md_number_to_chars(p, 0x0400, 2);
+      return;
+  }
+
+  if (opcode->opcode == TARN_JNZ) {
+      // Allocate space in the fragment for the opcode.
+      p = frag_more (2);
+      md_number_to_chars(p, 0x0500, 2);
+      return;
+  }
+
+  if (opcode->opcode == TARN_RETI) {
+      // Allocate space in the fragment for the opcode.
+      p = frag_more (2);
+      md_number_to_chars(p, 0x4000, 2);
+      return;
+  }
+
+  if (opcode->opcode == TARN_MOV) {
+
+      while (ISSPACE (*op_end)) ++op_end;
+      op_start = op_end;
+      for (; *op_end && !is_end_of_line[*op_end & 0xff] && *op_end != ' '; ++op_end)
+          nlen++;
+
+      pend = *op_end;
+      *op_end = 0;
+      tarn_reg_list_entry_t* reg1 = (tarn_reg_list_entry_t *) str_hash_find(src_reg_hash_control, op_start);
+      *op_end = pend;
+
+      if (reg1 == NULL) {
+          as_bad (_("unknown source register %s (%p, %lu)"), op_start, op_start, op_end - op_start);
+          return;
+      }
+
+      while (ISSPACE (*op_end)) ++op_end;
+      op_start = op_end;
+      for (; *op_end && !is_end_of_line[*op_end & 0xff] && *op_end != ' ' && *op_end != ','; ++op_end)
+          nlen++;
+
+      pend = *op_end;
+      *op_end = 0;
+      tarn_reg_list_entry_t* reg2 = (tarn_reg_list_entry_t *) str_hash_find(dest_reg_hash_control, op_start);
+      *op_end = pend;
+
+      if (reg2 == NULL) {
+          as_bad (_("unknown dest register %s (%p, %lu)"), op_start, op_start, op_end - op_start);
+          return;
+      }
+
+      // Allocate space in the fragment for the opcode.
+      p = frag_more (1);
+
+      // Whatever the argument is, we know the opcode, so store that in
+      // the current fragment.
+      char inst = (reg1->num << 4) + reg2->num;
+      md_number_to_chars(p, inst, 1);
+
+      {
+          // uh, save expression as a fixup/reloc?
+          expressionS arg;
+          char *where;
+
+          while (ISSPACE (*op_end)) ++op_end;
+
+          if (*op_end != ',') {
+              as_bad (_("need comma followed by IL value %s (%p, %lu)"), op_start, op_start, op_end - op_start);
+              ignore_rest_of_line ();
+              return;
+          }
+          ++op_end;
+
+          while (ISSPACE (*op_end)) ++op_end;
+
+          op_end = parse_exp_save_ilp(op_end, &arg);
+          where = frag_more (1);
+          fix_new_exp (frag_now,
+                       (where - frag_now->fr_literal),
+                       1,
+                       &arg,
+                       0,
+                       BFD_RELOC_8);
+      }
+
+      while (ISSPACE (*op_end)) ++op_end;
+
+      return;
+  }
+
+  as_bad (_("unhandled opcode %s (%p, %lu)"), op_start, op_start, op_end - op_start);
+  ignore_rest_of_line ();
+  return;
 
   if (*op_end != 0)
     as_warn ("extra stuff on line ignored");

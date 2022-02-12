@@ -43,11 +43,26 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
 typedef struct tarn_opc_info_t
 {
     unsigned char opcode;
-    unsigned char from : 4;
-    unsigned char to : 4;
+    int fixed;
     const char *name;
 } tarn_opc_info_t;
 
-#define TARN_OPC_COUNT 208
+typedef struct {
+    char num;
+    char *name;
+} tarn_reg_list_entry_t;
+
+#define TARN_OPC_COUNT 5
+
+#define TARN_NOP  0
+#define TARN_JUMP 1
+#define TARN_JNZ  2
+#define TARN_RETI 3
+#define TARN_MOV  4
+
+#define TARN_SRC_REG_COUNT 11
+#define TARN_DEST_REG_COUNT 13
 
 extern const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT];
+extern const tarn_reg_list_entry_t tarn_src_registers[TARN_SRC_REG_COUNT];
+extern const tarn_reg_list_entry_t tarn_dest_registers[TARN_DEST_REG_COUNT];
