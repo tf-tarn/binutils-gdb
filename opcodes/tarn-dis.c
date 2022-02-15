@@ -103,7 +103,7 @@ print_insn_tarn (bfd_vma addr, struct disassemble_info *info)
             }
         }
         fpr (stream, "%s\t%s\t%s\t,0x%02x",
-             opcode->name, sreg_name, dreg_name, iword & 0xff);
+             opcode->name, dreg_name, sreg_name, iword & 0xff);
     } else {
         fpr (stream, "%s", opcode->name);
     }

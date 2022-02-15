@@ -111,6 +111,35 @@ static reloc_howto_type tarn_elf_howto_table[] =
 	 0xff,		/* src_mask */
 	 0xff,		/* dst_mask */
 	 FALSE),		/* pcrel_offset */
+
+  /* lo8-part to use in  .byte lo8(sym).  */
+  HOWTO (R_TARN_8_LO8,		/* type */
+	 0,			/* rightshift */
+	 0,			/* size (0 = byte, 1 = short, 2 = long) */
+	 8,			/* bitsize */
+	 FALSE,			/* pc_relative */
+	 0,			/* bitpos */
+	 complain_overflow_dont,/* complain_on_overflow */
+	 bfd_elf_generic_reloc,	/* special_function */
+	 "R_TARN_8_LO8",		/* name */
+	 FALSE,			/* partial_inplace */
+	 0xffffff,		/* src_mask */
+	 0xffffff,		/* dst_mask */
+	 FALSE),		/* pcrel_offset */
+  /* hi8-part to use in  .byte hi8(sym).  */
+  HOWTO (R_TARN_8_HI8,		/* type */
+	 8,			/* rightshift */
+	 0,			/* size (0 = byte, 1 = short, 2 = long) */
+	 8,			/* bitsize */
+	 FALSE,			/* pc_relative */
+	 0,			/* bitpos */
+	 complain_overflow_dont,/* complain_on_overflow */
+	 bfd_elf_generic_reloc,	/* special_function */
+	 "R_TARN_8_HI8",		/* name */
+	 FALSE,			/* partial_inplace */
+	 0xffffff,		/* src_mask */
+	 0xffffff,		/* dst_mask */
+	 FALSE),		/* pcrel_offset */
 };
 
 /* This structure is used to map BFD reloc codes to tarn elf relocs.  */
@@ -125,8 +154,10 @@ struct elf_reloc_map
 
 static const struct elf_reloc_map tarn_reloc_map[] =
 {
-    { BFD_RELOC_NONE, 		R_TARN_NONE          },
-    { BFD_RELOC_8, 		R_TARN_DIR8         }
+    { BFD_RELOC_NONE,      R_TARN_NONE },
+    { BFD_RELOC_8,         R_TARN_DIR8 },
+    { BFD_RELOC_TARN_8_LO, R_TARN_8_LO8 },
+    { BFD_RELOC_TARN_8_HI, R_TARN_8_HI8 },
 };
 
 /* Given a BFD reloc code, return the howto structure for the
@@ -177,13 +208,15 @@ tarn_elf_info_to_howto (bfd *abfd ATTRIBUTE_UNUSED,
   cache_ptr->howto = &tarn_elf_howto_table[r];
 }
 
-#define TARGET_BIG_SYM		tarn_elf32_vec
-#define TARGET_BIG_NAME		"elf32-tarn"
 #define ELF_ARCH		bfd_arch_tarn
 #define ELF_MACHINE_CODE	EM_TARN
 #define ELF_MAXPAGESIZE  	1
+
+#define TARGET_BIG_SYM		tarn_elf32_vec
+#define TARGET_BIG_NAME		"elf32-tarn"
+
+#define elf_info_to_howto		tarn_elf_info_to_howto
 #define bfd_elf32_bfd_reloc_type_lookup tarn_elf_reloc_type_lookup
 #define bfd_elf32_bfd_reloc_name_lookup tarn_elf_reloc_name_lookup
-#define elf_info_to_howto		tarn_elf_info_to_howto
 
 #include "elf32-target.h"

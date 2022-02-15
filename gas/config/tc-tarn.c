@@ -46,6 +46,154 @@ const pseudo_typeS md_pseudo_table[] =
 const char FLT_CHARS[] = "rRsSfFdDxXpP";
 const char EXP_CHARS[] = "eE";
 
+////////////////////////////////////////////////////////////////////////////////
+
+const exp_mod_data_t exp_mod_data[] =
+{
+  /* Default, must be first.  */
+  { "", 0, BFD_RELOC_16, "" },
+  /* The following are used together with tarn-gcc's __memx address space
+     in order to initialize a 24-bit pointer variable with a 24-bit address.
+     For address in flash, hlo8 will contain the flash segment if the
+     symbol is located in flash. If the symbol is located in RAM; hlo8
+     will contain 0x80 which matches tarn-gcc's notion of how 24-bit RAM/flash
+     addresses linearize address space.  */
+  { "lo8",  1, BFD_RELOC_TARN_8_LO,  "`lo8' "  },
+  { "hi8",  1, BFD_RELOC_TARN_8_HI,  "`hi8' "  },
+};
+
+#define EXP_MOD_NAME(i)       exp_mod[i].name
+#define EXP_MOD_RELOC(i)      exp_mod[i].reloc
+#define EXP_MOD_NEG_RELOC(i)  exp_mod[i].neg_reloc
+#define HAVE_PM_P(i)          exp_mod[i].have_pm
+
+struct exp_mod_s
+{
+  const char *                    name;
+  bfd_reloc_code_real_type  reloc;
+  bfd_reloc_code_real_type  neg_reloc;
+  int                       have_pm;
+};
+
+static struct exp_mod_s exp_mod[] =
+{
+  {"hi8",    BFD_RELOC_TARN_8_HI,    BFD_RELOC_TARN_8_HI,    1},
+  {"lo8",    BFD_RELOC_TARN_8_LO,    BFD_RELOC_TARN_8_LO,    1},
+};
+
+/* A union used to store indices into the exp_mod[] array
+   in a hash table which expects void * data types.  */
+typedef union
+{
+  void * ptr;
+  int    index;
+} mod_index;
+
+/* Reloc modifiers hash control (hh8,hi8,lo8,pm_xx).  */
+static htab_t tarn_mod_hash;
+
+
+static inline char *
+skip_space (char *s)
+{
+  while (*s == ' ' || *s == '\t')
+    ++s;
+  return s;
+}
+
+/* Parse special CONS expression: pm (expression) or alternatively
+   gs (expression).  These are used for addressing program memory.  Moreover,
+   define lo8 (expression), hi8 (expression) and hlo8 (expression).  */
+
+const exp_mod_data_t *
+tarn_parse_cons_expression (expressionS *exp, int nbytes)
+{
+  char *tmp;
+  unsigned int i;
+
+  tmp = input_line_pointer = skip_space (input_line_pointer);
+
+  /* The first entry of exp_mod_data[] contains an entry if no
+     expression modifier is present.  Skip it.  */
+
+  fprintf(stderr, "tarn_parse_cons_expression: called\n");
+
+  for (i = 0; i < ARRAY_SIZE (exp_mod_data); i++)
+    {
+      const exp_mod_data_t *pexp = &exp_mod_data[i];
+      int len = strlen (pexp->name);
+
+      fprintf(stderr, "tarn_parse_cons_expression: i=%d nbytes=%d ilp=%s\n", i, pexp->nbytes, input_line_pointer);
+
+      if (nbytes == pexp->nbytes
+          && strncasecmp (input_line_pointer, pexp->name, len) == 0)
+	{
+	  input_line_pointer = skip_space (input_line_pointer + len);
+
+	  if (*input_line_pointer == '(')
+	    {
+	      input_line_pointer = skip_space (input_line_pointer + 1);
+	      expression (exp);
+
+	      if (*input_line_pointer == ')')
+		{
+		  ++input_line_pointer;
+		  return pexp;
+		}
+	      else
+		{
+		  as_bad (_("`)' required"));
+		  return &exp_mod_data[0];
+		}
+	    }
+
+	  input_line_pointer = tmp;
+
+          break;
+	}
+    }
+
+  expression (exp);
+  return &exp_mod_data[0];
+}
+
+void
+tarn_cons_fix_new (fragS *frag,
+		  int where,
+		  int nbytes,
+		  expressionS *exp,
+		  const exp_mod_data_t *pexp_mod_data)
+{
+  int bad = 0;
+
+  switch (pexp_mod_data->reloc)
+    {
+    default:
+      if (nbytes == 1)
+	fix_new_exp (frag, where, nbytes, exp, FALSE, BFD_RELOC_8);
+      else if (nbytes == 2)
+	fix_new_exp (frag, where, nbytes, exp, FALSE, BFD_RELOC_16);
+      else if (nbytes == 4)
+	fix_new_exp (frag, where, nbytes, exp, FALSE, BFD_RELOC_32);
+      else
+	bad = 1;
+      break;
+
+    case BFD_RELOC_TARN_8_LO:
+    case BFD_RELOC_TARN_8_HI:
+      if (nbytes == pexp_mod_data->nbytes)
+        fix_new_exp (frag, where, nbytes, exp, FALSE, pexp_mod_data->reloc);
+      else
+        bad = 1;
+      break;
+    }
+
+  if (bad)
+    as_bad (_("illegal %s relocation size: %d"), pexp_mod_data->error, nbytes);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void
 md_operand (expressionS *op __attribute__((unused)))
 {
@@ -69,12 +217,22 @@ md_begin (void)
   for (count = 0, opcode = tarn_opc_info; count++ < TARN_OPC_COUNT; opcode++)
       str_hash_insert (opcode_hash_control, opcode->name, opcode, 0);
 
-  tarn_reg_list_entry_t *entry;
+  const tarn_reg_list_entry_t *entry;
   for (count = 0, entry = tarn_src_registers; count++ < TARN_SRC_REG_COUNT; entry++)
       str_hash_insert (src_reg_hash_control, entry->name, entry, 0);
 
   for (count = 0, entry = tarn_dest_registers; count++ < TARN_DEST_REG_COUNT; entry++)
       str_hash_insert (dest_reg_hash_control, entry->name, entry, 0);
+
+  tarn_mod_hash = str_htab_create ();
+
+  for (int i = 0; i < ARRAY_SIZE (exp_mod); ++i)
+    {
+      mod_index m;
+
+      m.index = i + 10;
+      str_hash_insert (tarn_mod_hash, EXP_MOD_NAME (i), m.ptr, 0);
+    }
 
   bfd_set_arch_mach (stdoutput, TARGET_ARCH, 0);
 }
@@ -91,6 +249,28 @@ parse_exp_save_ilp (char *s, expressionS *op)
   s = input_line_pointer;
   input_line_pointer = save;
   return s;
+}
+
+int check_for_tarn_ops(char *where, char **opname, char **oparg) {
+    char *_opname = where;
+    while (*where && !ISSPACE(*where) && *where != '(') ++where;
+    if (*where != '(') {
+        return 0;
+    }
+    *where = 0;
+    ++where;
+    char *_oparg = where;
+    while (ISSPACE (*where)) ++where;
+    while (*where && !ISSPACE(*where) && *where != ')') ++where;
+    while (ISSPACE (*where)) ++where;
+    if (*where != ')') {
+        as_bad (_("missing close parenthesis in operator expression \"%s\""), _oparg);
+        return 0;
+    }
+    *where = 0;
+    *opname = _opname;
+    *oparg = _oparg;
+    return 1;
 }
 
 /* This is the guts of the machine-dependent assembler.  STR points to
@@ -169,13 +349,14 @@ md_assemble (char *str)
 
       pend = *op_end;
       *op_end = 0;
-      tarn_reg_list_entry_t* reg1 = (tarn_reg_list_entry_t *) str_hash_find(src_reg_hash_control, op_start);
-      *op_end = pend;
+      tarn_reg_list_entry_t* reg2 = (tarn_reg_list_entry_t *) str_hash_find(dest_reg_hash_control, op_start);
 
-      if (reg1 == NULL) {
-          as_bad (_("unknown source register %s (%p, %lu)"), op_start, op_start, op_end - op_start);
+      if (reg2 == NULL) {
+          as_bad (_("unknown dest register %s (%p, %lu)"), op_start, op_start, op_end - op_start);
+          *op_end = pend;
           return;
       }
+      *op_end = pend;
 
       while (ISSPACE (*op_end)) ++op_end;
       op_start = op_end;
@@ -184,13 +365,14 @@ md_assemble (char *str)
 
       pend = *op_end;
       *op_end = 0;
-      tarn_reg_list_entry_t* reg2 = (tarn_reg_list_entry_t *) str_hash_find(dest_reg_hash_control, op_start);
-      *op_end = pend;
+      tarn_reg_list_entry_t* reg1 = (tarn_reg_list_entry_t *) str_hash_find(src_reg_hash_control, op_start);
 
-      if (reg2 == NULL) {
-          as_bad (_("unknown dest register %s (%p, %lu)"), op_start, op_start, op_end - op_start);
+      if (reg1 == NULL) {
+          as_bad (_("unknown source register %s (%p, %lu)"), op_start, op_start, op_end - op_start);
+          *op_end = pend;
           return;
       }
+      *op_end = pend;
 
       // Allocate space in the fragment for the opcode.
       p = frag_more (1);
@@ -214,16 +396,39 @@ md_assemble (char *str)
           }
           ++op_end;
 
-          while (ISSPACE (*op_end)) ++op_end;
+          fprintf(stderr, "IL value: %s\n", op_end);
 
-          op_end = parse_exp_save_ilp(op_end, &arg);
+          while (ISSPACE (*op_end)) ++op_end;
+          char *opname = NULL, *oparg = NULL;
           where = frag_more (1);
-          fix_new_exp (frag_now,
-                       (where - frag_now->fr_literal),
-                       1,
-                       &arg,
-                       0,
-                       BFD_RELOC_8);
+          if (check_for_tarn_ops(op_end, &opname, &oparg)) {
+              bfd_reloc_code_real_type r_type;
+
+              mod_index m;
+
+              m.ptr = str_hash_find (tarn_mod_hash, opname);
+              int mod = m.index;
+              if (mod) {
+                  mod -= 10;
+                  parse_exp_save_ilp(oparg, &arg);
+                  fix_new_exp (frag_now,
+                               (where - frag_now->fr_literal),
+                               1,
+                               &arg,
+                               0,
+                               EXP_MOD_RELOC (mod));
+              } else {
+                  as_bad(_("unknown pseudo-operator \"%s\""), opname);
+              }
+          } else {
+              op_end = parse_exp_save_ilp(op_end, &arg);
+              fix_new_exp (frag_now,
+                           (where - frag_now->fr_literal),
+                           1,
+                           &arg,
+                           0,
+                           BFD_RELOC_8);
+          }
       }
 
       while (ISSPACE (*op_end)) ++op_end;
@@ -312,23 +517,74 @@ md_apply_fix (fixS *fixP ATTRIBUTE_UNUSED, valueT * valP ATTRIBUTE_UNUSED, segT 
   char *buf = fixP->fx_where + fixP->fx_frag->fr_literal;
   long val = *valP;
   long max, min;
+  unsigned long insn;
+  unsigned char *where;
 
   max = min = 0;
-  switch (fixP->fx_r_type)
-    {
-    case BFD_RELOC_8:
-      *buf++ = val;
-      break;
+  /* switch (fixP->fx_r_type) */
+  /*   { */
+  /*   case BFD_RELOC_8: */
+  /*     *buf++ = val; */
+  /*     break; */
 
-    default:
-      abort ();
-    }
+  /*   default: */
+  /*     abort (); */
+  /*   } */
 
   if (max != 0 && (val < min || val > max))
     as_bad_where (fixP->fx_file, fixP->fx_line, _("offset out of range"));
 
   if (fixP->fx_addsy == NULL && fixP->fx_pcrel == 0)
     fixP->fx_done = 1;
+
+  where = (unsigned char *) fixP->fx_frag->fr_literal + fixP->fx_where;
+  switch (fixP->fx_r_type) {
+  default:
+      fixP->fx_no_overflow = 1;
+      break;
+    case BFD_RELOC_32:
+    case BFD_RELOC_16:
+      break;
+  }
+
+  if (fixP->fx_done) {
+      /* Fetch the instruction, insert the fully resolved operand
+         value, and stuff the instruction back again.  */
+      where = (unsigned char *) fixP->fx_frag->fr_literal + fixP->fx_where;
+      insn = bfd_getl16 (where);
+
+      switch (fixP->fx_r_type) {
+      case BFD_RELOC_32:
+	  bfd_putl32 ((bfd_vma) val, where);
+	  break;
+
+      case BFD_RELOC_16:
+	  bfd_putl16 ((bfd_vma) val, where);
+	  break;
+
+      case BFD_RELOC_8:
+          if (val > 255 || val < -128)
+              as_warn_where (fixP->fx_file, fixP->fx_line,
+                             _("operand out of range: %ld"), val);
+          *where = val;
+	  break;
+
+
+      case BFD_RELOC_TARN_8_LO:
+          *where = 0xff & val;
+          break;
+
+      case BFD_RELOC_TARN_8_HI:
+          *where = 0xff & (val >> 8);
+          break;
+
+      default:
+          as_fatal (_("line %d: unknown relocation type: 0x%x"),
+                    fixP->fx_line, fixP->fx_r_type);
+          break;
+      }
+  }
+
 }
 
 /* Put number into target byte order (big endian).  */

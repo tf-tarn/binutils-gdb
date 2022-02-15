@@ -29,6 +29,57 @@
 /* This macro is the BFD architecture to pass to `bfd_set_arch_mach'.  */
 #define TARGET_ARCH bfd_arch_tarn
 
+////////////////////////////////////////////////////////////////////////////////
+
+typedef struct
+{
+  /* Name of the expression modifier allowed with .byte, .word, etc.  */
+  const char *name;
+
+  /* Only allowed with n bytes of data.  */
+  int nbytes;
+
+  /* Associated RELOC.  */
+  bfd_reloc_code_real_type reloc;
+
+  /* Part of the error message.  */
+  const char *error;
+} exp_mod_data_t;
+
+extern const exp_mod_data_t exp_mod_data[];
+#define TC_PARSE_CONS_RETURN_TYPE const exp_mod_data_t *
+#define TC_PARSE_CONS_RETURN_NONE exp_mod_data
+
+/* You may define this macro to parse an expression used in a data
+   allocation pseudo-op such as `.word'.  You can use this to
+   recognize relocation directives that may appear in such directives.  */
+#define TC_PARSE_CONS_EXPRESSION(EXPR,N) tarn_parse_cons_expression (EXPR, N)
+extern const exp_mod_data_t *tarn_parse_cons_expression (expressionS *, int);
+
+/* We don't want gas to fixup the following program memory related relocations.
+   We will need them in case that we want to do linker relaxation.
+   We could in principle keep these fixups in gas when not relaxing.
+   However, there is no serious performance penalty when making the linker
+   make the fixup work.  Check also that fx_addsy is not NULL, in order to make
+   sure that the fixup refers to some sort of label.  */
+#define TC_VALIDATE_FIX(FIXP,SEG,SKIP)                       \
+  if (   (FIXP->fx_r_type == BFD_RELOC_TARN_8_LO             \
+       || FIXP->fx_r_type == BFD_RELOC_TARN_8_HI)           \
+      && FIXP->fx_addsy != NULL				     \
+      && FIXP->fx_subsy == NULL)			     \
+    {							     \
+      symbol_mark_used_in_reloc (FIXP->fx_addsy);	     \
+      goto SKIP;					     \
+    }
+
+/* You may define this macro to generate a fixup for a data
+   allocation pseudo-op.  */
+#define TC_CONS_FIX_NEW tarn_cons_fix_new
+extern void tarn_cons_fix_new (fragS *,int, int, expressionS *,
+			      const exp_mod_data_t *);
+
+////////////////////////////////////////////////////////////////////////////////
+
 #define md_undefined_symbol(NAME)           0
 
 /* These macros must be defined, but is will be a fatal assembler
