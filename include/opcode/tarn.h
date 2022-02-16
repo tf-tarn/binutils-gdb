@@ -40,6 +40,12 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
   }
  */
 
+#define TARN_VERSION_V23     23
+#define TARN_VERSION_V29     29
+#define TARN_VERSION_VFUTURE 666
+
+#define TARN_VERSION TARN_VERSION_V23
+
 typedef struct tarn_opc_info_t
 {
     unsigned char opcode;
@@ -52,6 +58,11 @@ typedef struct {
     char *name;
 } tarn_reg_list_entry_t;
 
+
+#if TARN_VERSION==TARN_VERSION_VFUTURE
+
+#pragma message "tarn version future"
+
 #define TARN_OPC_COUNT 5
 
 #define TARN_NOP  0
@@ -62,6 +73,28 @@ typedef struct {
 
 #define TARN_SRC_REG_COUNT 11
 #define TARN_DEST_REG_COUNT 13
+
+#elif TARN_VERSION==TARN_VERSION_V29
+
+#error "Unsupported tarn version 2.9"
+
+#elif TARN_VERSION==TARN_VERSION_V23
+
+#define TARN_OPC_COUNT 3
+
+#define TARN_NOP  0
+#define TARN_JUMP 1
+#define TARN_MOV  2
+
+#define TARN_SRC_REG_COUNT 10
+#define TARN_DEST_REG_COUNT 13
+
+#else
+
+#error "Unsupported tarn version"
+
+#endif
+
 
 extern const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT];
 extern const tarn_reg_list_entry_t tarn_src_registers[TARN_SRC_REG_COUNT];

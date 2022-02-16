@@ -127,6 +127,8 @@ for fi, fn in from_registers:
 */
 
 
+#if TARN_VERSION==TARN_VERSION_VFUTURE
+
 const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT] = {
     { TARN_NOP,  0x0000, "nop" },
     { TARN_JUMP, 0x0400, "jump" },
@@ -164,3 +166,97 @@ const tarn_reg_list_entry_t tarn_dest_registers[TARN_DEST_REG_COUNT] = {
  { 14, "alua" },
  { 15, "alub" }
  };
+
+#elif TARN_VERSION==TARN_VERSION_V29
+const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT] = {
+    { TARN_NOP,  0x0000, "nop" },
+    { TARN_JUMP, 0x0400, "jump" },
+    { TARN_JNZ,  0x0500, "jnz" },
+    { TARN_RETI, 0x4000, "reti" },
+    { TARN_MOV,  -1, "mov" },
+};
+
+const tarn_reg_list_entry_t tarn_dest_registers[TARN_DEST_REG_COUNT] = {
+ { 0,  "p0" },
+ { 1,  "p1" },
+ { 2,  "status" },
+ { 3,  "jmph" },
+ { 4,  "jmpl" },
+ { 5,  "alusel" },
+ { 6,  "p2" },
+ { 7,  "r" },
+ { 8,  "adh" },
+ { 9,  "adl" },
+ { 10, "ih" },
+ { 11, "il" },
+ { 12, "mem" },
+ { 13, "p3" },
+ { 14, "alua" }
+ { 15, "alub" }
+ };
+
+const tarn_reg_list_entry_t tarn_src_registers[TARN_SRC_REG_COUNT] = {
+ { 1,  "aluc" },
+ { 2,  "p0" },
+ // 3 - memory pointed to by PC
+ { 3,  "ihmem" },
+ { 4,  "p1" },
+ { 5,  "p2" },
+ { 6,  "cr" },
+ { 7, "r" },
+ // 8 - PC increment
+ // 9 - jump
+ { 10, "ih" },
+ { 11, "il" },
+ { 12, "mem" }
+ { 12, "p3" }
+ { 13, "zero" }
+ { 14, "one" }
+ };
+
+
+#elif TARN_VERSION==TARN_VERSION_V23
+const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT] = {
+    { TARN_NOP,  0x0000, "nop" },
+    { TARN_JUMP, 0x0400, "jump" },
+    { TARN_MOV,  -1, "mov" },
+};
+
+const tarn_reg_list_entry_t tarn_dest_registers[TARN_DEST_REG_COUNT] = {
+ { 1,  "p0" },
+ { 2,  "status" },
+ { 3,  "jmph" },
+ { 4,  "jmpl" },
+ // 5 - cr
+ // 6 - do crement
+ { 7,  "r" },
+ { 8,  "adh" },
+ { 9,  "adl" },
+ { 10, "ih" },
+ { 11, "il" },
+ { 12, "mem" },
+ { 13, "p1" },
+ { 14, "ara" },
+ { 15, "arb" }
+ };
+
+const tarn_reg_list_entry_t tarn_src_registers[TARN_SRC_REG_COUNT] = {
+ { 1,  "arc" },
+ { 2,  "status" },
+ // 3 - memory pointed to by PC
+ { 4,  "p0" },
+ // 5 - cr increment/decrement
+ // 6 - cr
+ { 7,  "r" },
+ // 8 - PC increment
+ // 9 - jump
+ { 10, "ih" },
+ { 11, "il" },
+ { 12, "mem" },
+ { 12, "p1" },
+ { 13, "zero" },
+ { 14, "one" }
+ };
+#else
+error "Unsupported tarn version " TARN_VERSION
+#endif

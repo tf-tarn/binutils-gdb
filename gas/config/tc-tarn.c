@@ -29,9 +29,9 @@
 
 // extern const tarn_opc_info_t tarn_opc_info[256];
 
-const char comment_chars[]        = "#";
-const char line_separator_chars[] = ";";
-const char line_comment_chars[]   = "#";
+const char comment_chars[]        = "#;";
+const char line_separator_chars[] = "";
+const char line_comment_chars[]   = "#;";
 
 static int pending_reloc;
 static htab_t opcode_hash_control;
@@ -244,6 +244,7 @@ parse_exp_save_ilp (char *s, expressionS *op)
 {
   char *save = input_line_pointer;
 
+  fprintf(stderr, "parsing and saving expression \"%s\"\n", s);
   input_line_pointer = s;
   expression (op);
   s = input_line_pointer;
@@ -326,6 +327,7 @@ md_assemble (char *str)
       return;
   }
 
+  #if TARN_VERSION==TARN_VERSION_VFUTURE
   if (opcode->opcode == TARN_JNZ) {
       // Allocate space in the fragment for the opcode.
       p = frag_more (2);
@@ -339,6 +341,7 @@ md_assemble (char *str)
       md_number_to_chars(p, 0x4000, 2);
       return;
   }
+  #endif
 
   if (opcode->opcode == TARN_MOV) {
 
@@ -389,62 +392,68 @@ md_assemble (char *str)
 
           while (ISSPACE (*op_end)) ++op_end;
 
-          if (*op_end != ',') {
-              as_bad (_("need comma followed by IL value %s (%p, %lu)"), op_start, op_start, op_end - op_start);
-              ignore_rest_of_line ();
-              return;
-          }
-          ++op_end;
+          if (*op_end == ',') {
+              ++op_end;
 
-          fprintf(stderr, "IL value: %s\n", op_end);
+              while (ISSPACE (*op_end)) ++op_end;
+              char *opname = NULL, *oparg = NULL;
+              where = frag_more (1);
+              if (check_for_tarn_ops(op_end, &opname, &oparg)) {
+                  bfd_reloc_code_real_type r_type;
 
-          while (ISSPACE (*op_end)) ++op_end;
-          char *opname = NULL, *oparg = NULL;
-          where = frag_more (1);
-          if (check_for_tarn_ops(op_end, &opname, &oparg)) {
-              bfd_reloc_code_real_type r_type;
+                  mod_index m;
 
-              mod_index m;
-
-              m.ptr = str_hash_find (tarn_mod_hash, opname);
-              int mod = m.index;
-              if (mod) {
-                  mod -= 10;
-                  parse_exp_save_ilp(oparg, &arg);
+                  m.ptr = str_hash_find (tarn_mod_hash, opname);
+                  int mod = m.index;
+                  if (mod) {
+                      mod -= 10;
+                      parse_exp_save_ilp(oparg, &arg);
+                      fix_new_exp (frag_now,
+                                   (where - frag_now->fr_literal),
+                                   1,
+                                   &arg,
+                                   0,
+                                   EXP_MOD_RELOC (mod));
+                  } else {
+                      as_bad(_("unknown pseudo-operator \"%s\""), opname);
+                  }
+              } else {
+                  parse_exp_save_ilp(op_end, &arg);
                   fix_new_exp (frag_now,
                                (where - frag_now->fr_literal),
                                1,
                                &arg,
                                0,
-                               EXP_MOD_RELOC (mod));
-              } else {
-                  as_bad(_("unknown pseudo-operator \"%s\""), opname);
+                               BFD_RELOC_8);
               }
           } else {
-              op_end = parse_exp_save_ilp(op_end, &arg);
-              fix_new_exp (frag_now,
-                           (where - frag_now->fr_literal),
-                           1,
-                           &arg,
-                           0,
-                           BFD_RELOC_8);
+              if (is_end_of_line[*op_end & 0xff]) {
+                  // An unstated IL value is taken to be zero.
+                  p = frag_more (1);
+                  md_number_to_chars(p, 0, 1);
+                  ignore_rest_of_line ();
+                  return;
+              }
+              as_bad (_("need comma followed by IL value %s (%p, %lu)"), op_start, op_start, op_end - op_start);
+              ignore_rest_of_line ();
+              return;
           }
+
       }
-
-      while (ISSPACE (*op_end)) ++op_end;
-
+      ignore_rest_of_line ();
       return;
   }
-
-  as_bad (_("unhandled opcode %s (%p, %lu)"), op_start, op_start, op_end - op_start);
-  ignore_rest_of_line ();
-  return;
 
   if (*op_end != 0)
     as_warn ("extra stuff on line ignored");
 
   if (pending_reloc)
     as_bad ("Something forgot to clean up\n");
+
+  as_bad (_("unhandled opcode %s (%p, %lu)"), op_start, op_start, op_end - op_start);
+  ignore_rest_of_line ();
+  return;
+
 }
 
 /* Turn a string in input_line_pointer into a floating point constant
