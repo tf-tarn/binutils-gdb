@@ -88,8 +88,8 @@ print_insn_tarn (bfd_vma addr, struct disassemble_info *info)
         opcode = &tarn_opc_info[TARN_OPC_COUNT - 1];
         unsigned char sreg = (iword >> 8) >> 4;
         unsigned char dreg = (iword >> 8) & 0xf;
-        const char *sreg_name = "(unknown src reg)";
-        const char *dreg_name = "(unknown dest reg)";
+        const char *sreg_name = NULL;
+        const char *dreg_name = NULL;
         for (int i = 0; i < TARN_SRC_REG_COUNT; ++i) {
             if (sreg == tarn_src_registers[i].num) {
                 sreg_name = tarn_src_registers[i].name;
@@ -102,8 +102,17 @@ print_insn_tarn (bfd_vma addr, struct disassemble_info *info)
                 break;
             }
         }
-        fpr (stream, "%s\t%s\t%s\t,0x%02x",
-             opcode->name, dreg_name, sreg_name, iword & 0xff);
+        if (!sreg_name || !dreg_name) {
+            if (!sreg_name)
+                sreg_name = "(?)";
+            if (!dreg_name)
+                dreg_name = "(?)";
+            fpr (stream, "%s\t%s\t%s\t,0x%02x\t\t# Bad instruction.\n",
+                 opcode->name, dreg_name, sreg_name, iword & 0xff);
+        } else {
+            fpr (stream, "%s\t%s\t%s\t,0x%02x",
+                 opcode->name, dreg_name, sreg_name, iword & 0xff);
+        }
     } else {
         fpr (stream, "%s", opcode->name);
     }

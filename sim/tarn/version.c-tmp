@@ -1,0 +1,4 @@
+#include "version.h"
+const char version[] = "11.0.50.20210206-git";
+const char host_name[] = "tarn-elf32";
+const char target_name[] = "version.c";

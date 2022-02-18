@@ -244,7 +244,6 @@ parse_exp_save_ilp (char *s, expressionS *op)
 {
   char *save = input_line_pointer;
 
-  fprintf(stderr, "parsing and saving expression \"%s\"\n", s);
   input_line_pointer = s;
   expression (op);
   s = input_line_pointer;
@@ -323,7 +322,7 @@ md_assemble (char *str)
   if (opcode->opcode == TARN_JUMP) {
       // Allocate space in the fragment for the opcode.
       p = frag_more (2);
-      md_number_to_chars(p, 0x0400, 2);
+      md_number_to_chars(p, 0x9000, 2);
       return;
   }
 

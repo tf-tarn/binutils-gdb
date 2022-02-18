@@ -218,7 +218,7 @@ const tarn_reg_list_entry_t tarn_src_registers[TARN_SRC_REG_COUNT] = {
 #elif TARN_VERSION==TARN_VERSION_V23
 const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT] = {
     { TARN_NOP,  0x0000, "nop" },
-    { TARN_JUMP, 0x0400, "jump" },
+    { TARN_JUMP, 0x9000, "jump" },
     { TARN_MOV,  -1, "mov" },
 };
 
@@ -253,9 +253,9 @@ const tarn_reg_list_entry_t tarn_src_registers[TARN_SRC_REG_COUNT] = {
  { 10, "ih" },
  { 11, "il" },
  { 12, "mem" },
- { 12, "p1" },
- { 13, "zero" },
- { 14, "one" }
+ { 13, "p1" },
+ { 14, "zero" },
+ { 15, "one" }
  };
 #else
 error "Unsupported tarn version " TARN_VERSION

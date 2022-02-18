@@ -1,84 +1,56 @@
-/* Tarn Simulator definition.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
-   Contributed by Anthony Green <green@tarnlogic.com>
+/* Example synacor simulator.
 
-This file is part of GDB, the GNU debugger.
+   Copyright (C) 2005-2022 Free Software Foundation, Inc.
+   Contributed by Mike Frysinger.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3 of the License, or
-(at your option) any later version.
+   This file is part of simulators.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #ifndef SIM_MAIN_H
 #define SIM_MAIN_H
 
-/* Simulator state pseudo baseclass.
-
-   Each simulator is required to have the file ``sim-main.h''.  That
-   file includes ``sim-basics.h'', defines the base type ``sim_cia''
-   (the data type that contains complete current instruction address
-   information), include ``sim-base.h'':
-
-     #include "sim-basics.h"
-     /-* If `sim_cia' is not an integral value (e.g. a struct), define
-         CIA_ADDR to return the integral value.  *-/
-     /-* typedef struct {...} sim_cia; *-/
-     /-* #define CIA_ADDR(cia) (...) *-/
-     #include "sim-base.h"
-
-   finally, two data types `struct _sim_cpu' and `struct sim_state'
-   are defined:
-
-     struct _sim_cpu {
-        ... simulator specific members ...
-        sim_cpu_base base;
-     };
-
-     struct sim_state {
-       sim_cpu *cpu[MAX_NR_PROCESSORS];
-       ... simulator specific members ...
-       sim_state_base base;
-     };
-
-   Note that `base' appears last.  This makes `base.magic' appear last
-   in the entire struct and helps catch miscompilation errors. */
-
 #include "sim-basics.h"
 #include "sim-base.h"
-// #include "bfd.h"
-
 
 #define NUM_TARN_REGS 16
 
 struct _sim_cpu {
+    /* ... simulator specific members ... */
+    uint8_t registers[NUM_TARN_REGS];
+    uint8_t status;
+    sim_cia pc;
+    unsigned inst_count;
 
-    /* The following are internal simulator state variables: */
+  /* This isn't a real register, and the stack is not directly addressable,
+     so use memory outside of the 16-bit address space.  */
 
-    /* To keep this default simulator simple, and fast, we use a direct
-       vector of registers. The internal simulator engine then uses
-       manifests to access the correct slot. */
-
-    unsigned char registers[NUM_TARN_REGS];
-    unsigned char pc;
-    int exception;
-    unsigned long insts;
+    // also, it doesn't exist at all
+    // uint32_t sp;
 
   sim_cpu_base base;
 };
 
 struct sim_state {
+    sim_cpu *cpu[MAX_NR_PROCESSORS];
 
-  sim_cpu *cpu[MAX_NR_PROCESSORS];
-
+  /* ... simulator specific members ... */
   sim_state_base base;
 };
+
+
+extern void step_once (SIM_CPU *);
+extern void initialize_cpu (SIM_DESC, SIM_CPU *);
 
 #endif
