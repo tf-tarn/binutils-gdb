@@ -116,14 +116,14 @@ tarn_parse_cons_expression (expressionS *exp, int nbytes)
   /* The first entry of exp_mod_data[] contains an entry if no
      expression modifier is present.  Skip it.  */
 
-  fprintf(stderr, "tarn_parse_cons_expression: called\n");
+  // fprintf(stderr, "tarn_parse_cons_expression: called\n");
 
   for (i = 0; i < ARRAY_SIZE (exp_mod_data); i++)
     {
       const exp_mod_data_t *pexp = &exp_mod_data[i];
       int len = strlen (pexp->name);
 
-      fprintf(stderr, "tarn_parse_cons_expression: i=%d nbytes=%d ilp=%s\n", i, pexp->nbytes, input_line_pointer);
+      // fprintf(stderr, "tarn_parse_cons_expression: i=%d nbytes=%d ilp=%s\n", i, pexp->nbytes, input_line_pointer);
 
       if (nbytes == pexp->nbytes
           && strncasecmp (input_line_pointer, pexp->name, len) == 0)
@@ -251,7 +251,8 @@ parse_exp_save_ilp (char *s, expressionS *op)
   return s;
 }
 
-int check_for_tarn_ops(char *where, char **opname, char **oparg) {
+int check_for_tarn_ops(char **line_ptr, char **opname, char **oparg) {
+    char *where = *line_ptr;
     char *_opname = where;
     while (*where && !ISSPACE(*where) && *where != '(') ++where;
     if (*where != '(') {
@@ -268,6 +269,7 @@ int check_for_tarn_ops(char *where, char **opname, char **oparg) {
         return 0;
     }
     *where = 0;
+    *line_ptr = where + 1;
     *opname = _opname;
     *oparg = _oparg;
     return 1;
@@ -397,9 +399,7 @@ md_assemble (char *str)
               while (ISSPACE (*op_end)) ++op_end;
               char *opname = NULL, *oparg = NULL;
               where = frag_more (1);
-              if (check_for_tarn_ops(op_end, &opname, &oparg)) {
-                  bfd_reloc_code_real_type r_type;
-
+              if (check_for_tarn_ops(&op_end, &opname, &oparg)) {
                   mod_index m;
 
                   m.ptr = str_hash_find (tarn_mod_hash, opname);
@@ -437,14 +437,12 @@ md_assemble (char *str)
               ignore_rest_of_line ();
               return;
           }
-
       }
-      ignore_rest_of_line ();
       return;
   }
 
   if (*op_end != 0)
-    as_warn ("extra stuff on line ignored");
+      as_warn ("extra stuff on line ignored: '%s'", op_end);
 
   if (pending_reloc)
     as_bad ("Something forgot to clean up\n");
@@ -522,10 +520,8 @@ md_show_usage (FILE *stream ATTRIBUTE_UNUSED)
 void
 md_apply_fix (fixS *fixP ATTRIBUTE_UNUSED, valueT * valP ATTRIBUTE_UNUSED, segT seg ATTRIBUTE_UNUSED)
 {
-  char *buf = fixP->fx_where + fixP->fx_frag->fr_literal;
   long val = *valP;
   long max, min;
-  unsigned long insn;
   unsigned char *where;
 
   max = min = 0;
@@ -559,7 +555,6 @@ md_apply_fix (fixS *fixP ATTRIBUTE_UNUSED, valueT * valP ATTRIBUTE_UNUSED, segT 
       /* Fetch the instruction, insert the fully resolved operand
          value, and stuff the instruction back again.  */
       where = (unsigned char *) fixP->fx_frag->fr_literal + fixP->fx_where;
-      insn = bfd_getl16 (where);
 
       switch (fixP->fx_r_type) {
       case BFD_RELOC_32:

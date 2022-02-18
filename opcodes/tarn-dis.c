@@ -107,7 +107,7 @@ print_insn_tarn (bfd_vma addr, struct disassemble_info *info)
                 sreg_name = "(?)";
             if (!dreg_name)
                 dreg_name = "(?)";
-            fpr (stream, "%s\t%s\t%s\t,0x%02x\t\t# Bad instruction.\n",
+            fpr (stream, "%s\t%s\t%s\t,0x%02x\t\t# Bad instruction.",
                  opcode->name, dreg_name, sreg_name, iword & 0xff);
         } else {
             fpr (stream, "%s\t%s\t%s\t,0x%02x",
