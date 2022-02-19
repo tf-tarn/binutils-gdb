@@ -85,33 +85,37 @@ print_insn_tarn (bfd_vma addr, struct disassemble_info *info)
     }
 
     if (!opcode) {
-        opcode = &tarn_opc_info[TARN_OPC_COUNT - 1];
-        unsigned char sreg = (iword >> 8) >> 4;
-        unsigned char dreg = (iword >> 8) & 0xf;
-        const char *sreg_name = NULL;
-        const char *dreg_name = NULL;
-        for (int i = 0; i < TARN_SRC_REG_COUNT; ++i) {
-            if (sreg == tarn_src_registers[i].num) {
-                sreg_name = tarn_src_registers[i].name;
-                break;
-            }
-        }
-        for (int i = 0; i < TARN_DEST_REG_COUNT; ++i) {
-            if (dreg == tarn_dest_registers[i].num) {
-                dreg_name = tarn_dest_registers[i].name;
-                break;
-            }
-        }
-        if (!sreg_name || !dreg_name) {
-            if (!sreg_name)
-                sreg_name = "(?)";
-            if (!dreg_name)
-                dreg_name = "(?)";
-            fpr (stream, "%s\t%s\t%s\t,0x%02x\t\t# Bad instruction.",
-                 opcode->name, dreg_name, sreg_name, iword & 0xff);
+        if (iword == 0x9999) {
+            fpr (stream, "Halt simulation. Illegal on actual hardware.");
         } else {
-            fpr (stream, "%s\t%s\t%s\t,0x%02x",
-                 opcode->name, dreg_name, sreg_name, iword & 0xff);
+            opcode = &tarn_opc_info[TARN_OPC_COUNT - 1];
+            unsigned char sreg = (iword >> 8) >> 4;
+            unsigned char dreg = (iword >> 8) & 0xf;
+            const char *sreg_name = NULL;
+            const char *dreg_name = NULL;
+            for (int i = 0; i < TARN_SRC_REG_COUNT; ++i) {
+                if (sreg == tarn_src_registers[i].num) {
+                    sreg_name = tarn_src_registers[i].name;
+                    break;
+                }
+            }
+            for (int i = 0; i < TARN_DEST_REG_COUNT; ++i) {
+                if (dreg == tarn_dest_registers[i].num) {
+                    dreg_name = tarn_dest_registers[i].name;
+                    break;
+                }
+            }
+            if (!sreg_name || !dreg_name) {
+                if (!sreg_name)
+                    sreg_name = "(?)";
+                if (!dreg_name)
+                    dreg_name = "(?)";
+                fpr (stream, "%s\t%s\t%s\t,0x%02x\t\t# Bad instruction.",
+                     opcode->name, dreg_name, sreg_name, iword & 0xff);
+            } else {
+                fpr (stream, "%s\t%s\t%s\t,0x%02x",
+                     opcode->name, dreg_name, sreg_name, iword & 0xff);
+            }
         }
     } else {
         fpr (stream, "%s", opcode->name);

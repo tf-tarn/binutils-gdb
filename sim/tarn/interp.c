@@ -139,11 +139,8 @@ sim_open (SIM_OPEN_KIND kind, host_callback *callback,
   /* Allocate external memory if none specified by user.
      Use address 4 here in case the user wanted address 0 unmapped.  */
   if (sim_core_read_buffer (sd, NULL, read_map, &c, 4, 1) == 0) {
-      abort();
       sim_do_commandf (sd, "memory-size %#x", DEFAULT_MEM_SIZE);
   }
-
-  printf("%s", sim_memory_map(sd));
 
   return sd;
 }

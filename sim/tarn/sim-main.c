@@ -127,12 +127,15 @@ void step_once (SIM_CPU *cpu)
       //printf("# 0x%04x: NOP\n", pc);
       pc += 2;
   } else if (reg_src == TARN_SREG_JUMP) { // JUMP
-      if (reg_dest != 0) {
+      if (inst == 0x9999) {
+          // Fake halt instruction for simulation only.
+          sim_engine_halt (sd, cpu, NULL, pc, sim_exited, 0);
+      } else if (reg_dest != 0) {
           printf("Invalid jump opcode: %02x %02x", inst_h, inst_l);
           sim_engine_halt (sd, cpu, NULL, pc, sim_stopped, SIM_SIGILL);
       } else {
           pc = (cpu->registers[3] << 8) + cpu->registers[4];
-          printf("# 0x%04x: jump to %04x\n", opc, pc);
+          // printf("# 0x%04x: jump to %04x\n", opc, pc);
       }
   /* } else if (reg_src == 0x5) { // JNZ */
   /*     printf("Invalid jnz opcode: %02x\n", inst_h); */
@@ -144,17 +147,29 @@ void step_once (SIM_CPU *cpu)
       // Execute generic instruction.
       // TODO: implement adder and stuff .....
       uint8_t src_value;
-      if (reg_src == TARN_SREG_MEM) {
-          uint16_t addr = (cpu->registers[TARN_DREG_ADH] << 8) + cpu->registers[TARN_DREG_ADL];
-          src_value = sim_core_read_aligned_1 (cpu, pc, read_map, addr);
-      } else if (reg_src == TARN_SREG_IL) {
+      switch (reg_src) {
+      case TARN_SREG_MEM:
+          src_value = sim_core_read_aligned_1 (cpu, pc, read_map, (cpu->registers[TARN_DREG_ADH] << 8) + cpu->registers[TARN_DREG_ADL]);
+          break;
+      case TARN_SREG_IL:
           src_value = inst_l;
-      } else {
+          break;
+      case TARN_SREG_ONE:
+          src_value = 1;
+          break;
+      case TARN_SREG_ZERO:
+          src_value = 0;
+          break;
+      default:
           src_value = cpu->registers[reg_src];
+          break;
       }
+
       cpu->registers[reg_dest] = src_value;
-      printf("# 0x%04x: [%02x %02x] (%x %x) %s -> %s\n",
-      opc, inst_h, inst_l, reg_src, reg_dest, from_registers[reg_src], to_registers[reg_dest]);
+
+      /* printf("# 0x%04x: [%02x %02x] (%x %x) %s -> %s; %02x\n", */
+      /*        opc, inst_h, inst_l, reg_src, reg_dest, from_registers[reg_src], to_registers[reg_dest], src_value); */
+
       switch (reg_dest) {
       case TARN_DREG_ARA:
       case TARN_DREG_ARB:
@@ -166,7 +181,7 @@ void step_once (SIM_CPU *cpu)
               // to load the value into the actual register.
               cpu->status = sum > 0xff ? 1 : 0;
               cpu->registers[TARN_SREG_ARC] = sum & 0xff;
-              printf("# 0x%04x: ARC = %d\n", pc, cpu->registers[TARN_SREG_ARC]);
+              // printf("# 0x%04x: ARC = %d\n", pc, cpu->registers[TARN_SREG_ARC]);
           }
           break;
       case TARN_DREG_STATUS:
@@ -189,7 +204,7 @@ void step_once (SIM_CPU *cpu)
 
   ++cpu->inst_count;
 
-  if (pc > 0x100 || cpu->inst_count > 100) {
+  if (pc > 0x4000 || cpu->inst_count > 1000000) {
       sim_engine_halt (sd, cpu, NULL, pc, sim_stopped, SIM_SIGILL);
   }
 
