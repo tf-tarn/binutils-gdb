@@ -171,6 +171,12 @@ void step_once (SIM_CPU *cpu)
       /*        opc, inst_h, inst_l, reg_src, reg_dest, from_registers[reg_src], to_registers[reg_dest], src_value); */
 
       switch (reg_dest) {
+      case TARN_DREG_P1:
+          printf("OUTPUT1 %d\n", src_value);
+          break;
+      case TARN_DREG_P0:
+          printf("OUTPUT0 %d\n", src_value);
+          break;
       case TARN_DREG_ARA:
       case TARN_DREG_ARB:
           {
