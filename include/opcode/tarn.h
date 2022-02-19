@@ -86,8 +86,43 @@ typedef struct {
 #define TARN_JUMP 1
 #define TARN_MOV  2
 
-#define TARN_SRC_REG_COUNT 10
-#define TARN_DEST_REG_COUNT 13
+#define TARN_SRC_REG_COUNT 16
+#define TARN_DEST_REG_COUNT 16
+
+#define TARN_SREG_NOP          0
+#define TARN_SREG_ARC          1
+#define TARN_SREG_STATUS       2
+#define TARN_SREG_IHMEM        3
+#define TARN_SREG_P0           4
+#define TARN_SREG_CR_INC       5
+#define TARN_SREG_CR           6
+#define TARN_SREG_R            7
+#define TARN_SREG_PC_INC       8
+#define TARN_SREG_JUMP         9
+#define TARN_SREG_IH          10
+#define TARN_SREG_IL          11
+#define TARN_SREG_MEM         12
+#define TARN_SREG_P1          13
+#define TARN_SREG_ZERO        14
+#define TARN_SREG_ONE         15
+
+#define TARN_DREG_NOP        0
+#define TARN_DREG_P0         1
+#define TARN_DREG_STATUS     2
+#define TARN_DREG_JMPH       3
+#define TARN_DREG_JMPL       4
+#define TARN_DREG_CR         5
+#define TARN_DREG_DO_CREMENT 6
+#define TARN_DREG_R          7
+#define TARN_DREG_ADH        8
+#define TARN_DREG_ADL        9
+#define TARN_DREG_IH         10
+#define TARN_DREG_IL         11
+#define TARN_DREG_MEM        12
+#define TARN_DREG_P1         13
+#define TARN_DREG_ARA        14
+#define TARN_DREG_ARB        15
+
 
 #else
 

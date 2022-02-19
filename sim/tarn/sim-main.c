@@ -26,82 +26,6 @@
 #include "sim-main.h"
 #include "opcode/tarn.h"
 
-const char *from_registers[16] = {
-    /* 0 */   "nop",
-    /* 1 */   "arc",
-    /* 2 */   "status",
-    /* 3 */   "ihmem",
-    /* 4 */   "p0",
-    /* 5 */   "cr_inc",
-    /* 6 */   "cr",
-    /* 7 */   "r",
-    /* 8 */   "pc_inc",
-    /* 9 */   "jump",
-    /* 0 */   "ih",
-    /* 1 */   "il",
-    /* 2 */   "mem",
-    /* 3 */   "p1",
-    /* 4 */   "zero",
-    /* 5 */   "one"
-};
-
-const char *to_registers[16] = {
-/* 0 */    "nop",
-/* 1 */    "p0",
-/* 2 */    "status",
-/* 3 */    "jmph",
-/* 4 */    "jmpl",
-/* 5 */    "cr",
-/* 6 */    "do_crement",
-/* 7 */    "r",
-/* 8 */    "adh",
-/* 9 */    "adl",
-/* 0 */    "ih",
-/* 1 */    "il",
-/* 2 */    "mem",
-/* 3 */    "p1",
-/* 4 */    "ara",
-/* 5 */    "arb"
-};
-
-#define TARN_SREG_NOP          0
-#define TARN_SREG_ARC          1
-#define TARN_SREG_STATUS       2
-#define TARN_SREG_IHMEM        3
-#define TARN_SREG_P0           4
-#define TARN_SREG_CR_INC       5
-#define TARN_SREG_CR           6
-#define TARN_SREG_R            7
-#define TARN_SREG_PC_INC       8
-#define TARN_SREG_JUMP         9
-#define TARN_SREG_IH          10
-#define TARN_SREG_IL          11
-#define TARN_SREG_MEM         12
-#define TARN_SREG_P1          13
-#define TARN_SREG_ZERO        14
-#define TARN_SREG_ONE         15
-
-
-#define TARN_DREG_NOP        0
-#define TARN_DREG_P0         1
-#define TARN_DREG_STATUS     2
-#define TARN_DREG_JMPH       3
-#define TARN_DREG_JMPL       4
-#define TARN_DREG_CR         5
-#define TARN_DREG_DO_CREMENT 6
-#define TARN_DREG_R          7
-#define TARN_DREG_ADH        8
-#define TARN_DREG_ADL        9
-#define TARN_DREG_IH         10
-#define TARN_DREG_IL         11
-#define TARN_DREG_MEM        12
-#define TARN_DREG_P1         13
-#define TARN_DREG_ARA        14
-#define TARN_DREG_ARB        15
-
-
-
-
 /* Decode & execute a single instruction.  */
 void step_once (SIM_CPU *cpu)
 {

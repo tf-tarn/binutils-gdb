@@ -223,40 +223,43 @@ const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT] = {
 };
 
 const tarn_reg_list_entry_t tarn_dest_registers[TARN_DEST_REG_COUNT] = {
- { 1,  "p0" },
- { 2,  "status" },
- { 3,  "jmph" },
- { 4,  "jmpl" },
- // 5 - cr
- // 6 - do crement
- { 7,  "r" },
- { 8,  "adh" },
- { 9,  "adl" },
- { 10, "ih" },
- { 11, "il" },
- { 12, "mem" },
- { 13, "p1" },
- { 14, "ara" },
- { 15, "arb" }
- };
+    { 0,    "nop" },
+    { 1,    "p0" },
+    { 2,    "status" },
+    { 3,    "jmph" },
+    { 4,    "jmpl" },
+    { 5,    "cr" },
+    { 6,    "do_crement" },
+    { 7,    "r" },
+    { 8,    "adh" },
+    { 9,    "adl" },
+    { 10,    "ih" },
+    { 11,    "il" },
+    { 12,    "mem" },
+    { 13,    "p1" },
+    { 14,    "ara" },
+    { 15,    "arb" }
+};
 
 const tarn_reg_list_entry_t tarn_src_registers[TARN_SRC_REG_COUNT] = {
- { 1,  "arc" },
- { 2,  "status" },
- // 3 - memory pointed to by PC
- { 4,  "p0" },
- // 5 - cr increment/decrement
- // 6 - cr
- { 7,  "r" },
- // 8 - PC increment
- // 9 - jump
- { 10, "ih" },
- { 11, "il" },
- { 12, "mem" },
- { 13, "p1" },
- { 14, "zero" },
- { 15, "one" }
- };
+    { 0,  "nop" },
+    { 1,  "arc" },
+    { 2,  "status" },
+    { 3,  "ihmem" },
+    { 4,  "p0" },
+    { 5,  "cr_inc" },
+    { 6,  "cr" },
+    { 7,  "r" },
+    { 8,  "pc_inc" },
+    { 9,  "jump" },
+    { 10,  "ih" },
+    { 11,  "il" },
+    { 12,  "mem" },
+    { 13,  "p1" },
+    { 14,  "zero" },
+    { 15,  "one" }
+};
+
 #else
 error "Unsupported tarn version " TARN_VERSION
 #endif

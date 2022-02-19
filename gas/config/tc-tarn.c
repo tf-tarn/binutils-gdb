@@ -413,7 +413,7 @@ md_assemble (char *str)
                                    &arg,
                                    0,
                                    EXP_MOD_RELOC (mod));
-                      printf("pseudo-op %s ( %s )\n", opname, oparg);
+                      //printf("pseudo-op %s ( %s )\n", opname, oparg);
                   } else {
                       as_bad(_("unknown pseudo-operator \"%s\""), opname);
                   }
