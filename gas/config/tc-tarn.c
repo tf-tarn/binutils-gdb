@@ -324,7 +324,7 @@ md_assemble (char *str)
   if (opcode->opcode == TARN_JUMP) {
       // Allocate space in the fragment for the opcode.
       p = frag_more (2);
-      md_number_to_chars(p, 0x9000, 2);
+      md_number_to_chars(p, TARN_INST_JUMP, 2);
       return;
   }
 

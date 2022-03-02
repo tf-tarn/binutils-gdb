@@ -126,7 +126,6 @@ for fi, fn in from_registers:
 
 */
 
-
 #if TARN_VERSION==TARN_VERSION_VFUTURE
 
 const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT] = {
@@ -167,6 +166,54 @@ const tarn_reg_list_entry_t tarn_dest_registers[TARN_DEST_REG_COUNT] = {
  { 15, "alub" }
  };
 
+#elif TARN_VERSION==TARN_VERSION_V30
+
+const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT] = {
+    { TARN_NOP,  0x0000, "nop" },
+    { TARN_JUMP, 0xc000, "jump" },
+    { TARN_JNZ,  0x9000, "jnz" },
+    { TARN_RETI, 0x4000, "reti" },
+    { TARN_MOV,  -1, "mov" },
+};
+
+const tarn_reg_list_entry_t tarn_dest_registers[TARN_DEST_REG_COUNT] = {
+    { 0,  "nop"},
+    { 1,  "p0" },
+    { 2,  "jmpl" }, // jump target address low byte
+    { 3,  "jmph" }, // jump target address high byte
+    { 4,  "test" }, // test register for jnz
+    { 5,  "x" },
+    { 6,  "stack" },
+    { 7,  "pic" },
+    { 8,  "adl" },
+    { 9,  "adh" },
+    { 10, "mem" },
+    { 11, "r" },
+    { 12, "bs" },
+    { 13, "alus" },
+    { 14, "alua" },
+    { 15, "alub" }
+};
+
+const tarn_reg_list_entry_t tarn_src_registers[TARN_SRC_REG_COUNT] = {
+    { 0,  "nop" },
+    { 1,  "p0" },
+    { 2,  "intl" },
+    { 3,  "inth" },
+    { 4,  "do_reti" },
+    { 5,  "x" },
+    { 6,  "stack" },
+    { 7,  "pic" },
+    { 8,  "il" },
+    { 9,  "jnz" },
+    { 10, "mem" },
+    { 11, "r" },
+    { 12, "jump" },
+    { 13, "zero" },
+    { 14, "one" },
+    { 15, "aluc" }
+};
+
 #elif TARN_VERSION==TARN_VERSION_V29
 const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT] = {
     { TARN_NOP,  0x0000, "nop" },
@@ -177,45 +224,48 @@ const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT] = {
 };
 
 const tarn_reg_list_entry_t tarn_dest_registers[TARN_DEST_REG_COUNT] = {
- { 0,  "p0" },
- { 1,  "p1" },
- { 2,  "status" },
- { 3,  "jmph" },
- { 4,  "jmpl" },
- { 5,  "alusel" },
- { 6,  "p2" },
- { 7,  "r" },
- { 8,  "adh" },
- { 9,  "adl" },
- { 10, "ih" },
- { 11, "il" },
- { 12, "mem" },
- { 13, "p3" },
- { 14, "alua" }
- { 15, "alub" }
- };
+    { 0,  "p0" },
+    { 1,  "p1" },
+    { 2,  "status" },
+    { 3,  "jmph" },
+    { 4,  "jmpl" },
+    { 5,  "alusel" },
+    { 6,  "p2" },
+    { 7,  "r" },
+    { 8,  "adh" },
+    { 9,  "adl" },
+    { 10, "ih" },
+    { 11, "il" },
+    { 12, "mem" },
+    { 13, "p3" },
+    { 14, "alua" }
+    { 15, "alub" }
+};
 
 const tarn_reg_list_entry_t tarn_src_registers[TARN_SRC_REG_COUNT] = {
- { 1,  "aluc" },
- { 2,  "p0" },
- // 3 - memory pointed to by PC
- { 3,  "ihmem" },
- { 4,  "p1" },
- { 5,  "p2" },
- { 6,  "cr" },
- { 7, "r" },
- // 8 - PC increment
- // 9 - jump
- { 10, "ih" },
- { 11, "il" },
- { 12, "mem" }
- { 12, "p3" }
- { 13, "zero" }
- { 14, "one" }
- };
+    { 0,  "nop")
+    { 1,  "aluc" },
+    { 2,  "p0" },
+    { 3,  "ihmem" },
+    { 4,  "p1" },
+    { 5,  "p2" },
+    { 6,  "cr" },
+    { 7,  "r" },
+    { 8,  "pc_increment" },
+    { 9,  "_jump" }
+    { 10, "ih" },
+    { 11, "il" },
+    { 12, "mem" }
+    { 13, "p3" }
+    { 14, "zero" }
+    { 15, "one" }
+};
 
 
 #elif TARN_VERSION==TARN_VERSION_V23
+
+#define TARN_INST_HALT_SIM 0x9999 // invalid instruction to halt sim
+
 const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT] = {
     { TARN_NOP,  0x0000, "nop" },
     { TARN_JUMP, 0x9000, "jump" },

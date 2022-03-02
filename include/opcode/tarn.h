@@ -40,11 +40,15 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
   }
  */
 
+#ifndef OPCODE_TARN_H
+#define OPCODE_TARN_H 1
+
 #define TARN_VERSION_V23     23
 #define TARN_VERSION_V29     29
+#define TARN_VERSION_V30     30
 #define TARN_VERSION_VFUTURE 666
 
-#define TARN_VERSION TARN_VERSION_V23
+#define TARN_VERSION TARN_VERSION_V30
 
 typedef struct tarn_opc_info_t
 {
@@ -74,11 +78,80 @@ typedef struct {
 #define TARN_SRC_REG_COUNT 11
 #define TARN_DEST_REG_COUNT 13
 
+#elif TARN_VERSION==TARN_VERSION_V30
+
+#pragma message "tarn version 3.0"
+
+#define TARN_OPC_COUNT 5
+
+#define TARN_NOP  0
+#define TARN_JUMP 1
+#define TARN_JNZ  2
+#define TARN_RETI 3
+#define TARN_MOV  4
+
+#define TARN_INST_JUMP 0xc000
+#define TARN_INST_JNZ  0x9000
+#define TARN_INST_RETI 0x4000
+#define TARN_INST_HALT_SIM 0x9999 // invalid instruction to halt sim
+
+#define TARN_SRC_REG_COUNT 16
+#define TARN_DEST_REG_COUNT 16
+
+#define TARN_DREG_NOP     0
+#define TARN_DREG_P0      1
+#define TARN_DREG_JMPL    2
+#define TARN_DREG_JMPH    3
+#define TARN_DREG_TEST    4
+#define TARN_DREG_X       5
+#define TARN_DREG_STACK   6
+#define TARN_DREG_PIC     7
+#define TARN_DREG_ADL     8
+#define TARN_DREG_ADH     9
+#define TARN_DREG_MEM     10
+#define TARN_DREG_R       11
+#define TARN_DREG_BS      12
+#define TARN_DREG_ALUS    13
+#define TARN_DREG_ALUA    14
+#define TARN_DREG_ALUB    15
+
+#define TARN_SREG_NOP     0
+#define TARN_SREG_P0      1
+#define TARN_SREG_INTL    2
+#define TARN_SREG_INTH    3
+#define TARN_SREG_DO_RETI 4
+#define TARN_SREG_X       5
+#define TARN_SREG_STACK   6
+#define TARN_SREG_PIC     7
+#define TARN_SREG_IL      8
+#define TARN_SREG_JNZ     9
+#define TARN_SREG_MEM     10
+#define TARN_SREG_R       11
+#define TARN_SREG_JUMP    12
+#define TARN_SREG_ZERO    13
+#define TARN_SREG_ONE     14
+#define TARN_SREG_ALUC    15
+
+#define TARN_ALU_MODE_AND         0
+#define TARN_ALU_MODE_OR          1
+#define TARN_ALU_MODE_XOR         2
+#define TARN_ALU_MODE_NOT         3
+#define TARN_ALU_MODE_SUM         4
+#define TARN_ALU_MODE_STATUS      5
+#define TARN_ALU_MODE_COUNT_LOW   6
+#define TARN_ALU_MODE_COUNT_HIGH  7
+#define TARN_ALU_MODE_RESET_COUNT 8
+
+#define TARN_ALU_MODE_MASK 0xf
+
+
 #elif TARN_VERSION==TARN_VERSION_V29
 
 #error "Unsupported tarn version 2.9"
 
 #elif TARN_VERSION==TARN_VERSION_V23
+
+#pragma message "tarn version 2.3"
 
 #define TARN_OPC_COUNT 3
 
@@ -134,3 +207,5 @@ typedef struct {
 extern const tarn_opc_info_t tarn_opc_info[TARN_OPC_COUNT];
 extern const tarn_reg_list_entry_t tarn_src_registers[TARN_SRC_REG_COUNT];
 extern const tarn_reg_list_entry_t tarn_dest_registers[TARN_DEST_REG_COUNT];
+
+#endif

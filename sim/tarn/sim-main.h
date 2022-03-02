@@ -24,11 +24,14 @@
 #include "sim-basics.h"
 #include "sim-base.h"
 
+#include "opcode/tarn.h"
+
 #define NUM_TARN_REGS 16
 
 struct _sim_cpu {
     /* ... simulator specific members ... */
-    uint8_t registers[NUM_TARN_REGS];
+    uint8_t sregs[TARN_SRC_REG_COUNT];
+    uint8_t dregs[TARN_DEST_REG_COUNT];
     uint8_t status;
     sim_cia pc;
     unsigned inst_count;
