@@ -34,7 +34,7 @@ struct _sim_cpu {
     uint8_t dregs[TARN_DEST_REG_COUNT];
     uint8_t status;
     sim_cia pc;
-    unsigned inst_count;
+    uint16_t inst_count;
 
   /* This isn't a real register, and the stack is not directly addressable,
      so use memory outside of the 16-bit address space.  */

@@ -137,10 +137,13 @@ typedef struct {
 #define TARN_ALU_MODE_XOR         2
 #define TARN_ALU_MODE_NOT         3
 #define TARN_ALU_MODE_SUM         4
-#define TARN_ALU_MODE_STATUS      5
+#define TARN_ALU_MODE_CARRY       5
 #define TARN_ALU_MODE_COUNT_LOW   6
 #define TARN_ALU_MODE_COUNT_HIGH  7
 #define TARN_ALU_MODE_RESET_COUNT 8
+#define TARN_ALU_MODE_CMP_G       9
+#define TARN_ALU_MODE_CMP_E       10
+#define TARN_ALU_MODE_CMP_L       11
 
 #define TARN_ALU_MODE_MASK 0xf
 

@@ -84,22 +84,35 @@ void step_once (SIM_CPU *cpu)
               case TARN_ALU_MODE_AND:
                   src_value = cpu->dregs[TARN_DREG_ALUA] & cpu->dregs[TARN_DREG_ALUB];
                   break;
-              case TARN_ALU_MODE_STATUS:
-// a > b => status = 0000 0010
-// a < b => status = 0000 1000
-// a = b => status = 0000 0100
-// a + b => sum = 1111 1111 , status = 0000 0010
-// a + b => sum = 0000 0000 , status = 0000 0011
-
-                  {
-                      uint8_t a = cpu->dregs[TARN_DREG_ALUA];
-                      uint8_t b = cpu->dregs[TARN_DREG_ALUB];
-                      uint8_t l = a < b  ? (1 << 3) : 0;
-                      uint8_t e = a == b ? (1 << 2) : 0;
-                      uint8_t g = a > b  ? (1 << 1) : 0;
-                      uint8_t c = (uint16_t)a + (uint16_t)b > 0xff ? 1 : 0;
-                      src_value = g | l | e | c;
-                  }
+              case TARN_ALU_MODE_OR:
+                  src_value = cpu->dregs[TARN_DREG_ALUA] | cpu->dregs[TARN_DREG_ALUB];
+                  break;
+              case TARN_ALU_MODE_XOR:
+                  src_value = cpu->dregs[TARN_DREG_ALUA] ^ cpu->dregs[TARN_DREG_ALUB];
+                  break;
+              case TARN_ALU_MODE_NOT:
+                  src_value = ~cpu->dregs[TARN_DREG_ALUA];
+                  break;
+              case TARN_ALU_MODE_CARRY:
+                  src_value = ((unsigned)cpu->dregs[TARN_DREG_ALUA] + (unsigned)cpu->dregs[TARN_DREG_ALUB]) > 0xff ? 1 : 0;
+                  break;
+              case TARN_ALU_MODE_COUNT_LOW:
+                  src_value = cpu->inst_count & 0xff;
+                  break;
+              case TARN_ALU_MODE_COUNT_HIGH:
+                  src_value = (cpu->inst_count >> 8) & 0xff;
+                  break;
+              case TARN_ALU_MODE_RESET_COUNT:
+                  src_value = cpu->inst_count = 0;
+                  break;
+              case TARN_ALU_MODE_CMP_G:
+                  src_value = cpu->dregs[TARN_DREG_ALUA] > cpu->dregs[TARN_DREG_ALUB] ? 1 : 0;
+                  break;
+              case TARN_ALU_MODE_CMP_E:
+                  src_value = cpu->dregs[TARN_DREG_ALUA] == cpu->dregs[TARN_DREG_ALUB] ? 1 : 0;
+                  break;
+              case TARN_ALU_MODE_CMP_L:
+                  src_value = cpu->dregs[TARN_DREG_ALUA] < cpu->dregs[TARN_DREG_ALUB] ? 1 : 0;
                   break;
               default:
                   printf("Unimplemented ALU mode %d\r\n", cpu->dregs[TARN_DREG_ALUS]);
