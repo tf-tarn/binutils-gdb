@@ -24,17 +24,19 @@
 
 
 const bfd_arch_info_type bfd_tarn_arch =
-  {
-    8,                /* 8 bits in a word.  */
-    32,               /* 16 bits in an address.  */
-    8,                /*  8 bits in a byte.  */
-    bfd_arch_tarn,    /* enum bfd_architecture arch.  */
-    bfd_mach_tarn,
-    "tarn",           /* Arch name.  */
-    "tarn",           /* Printable name.  */
-    2,                /* Unsigned int section alignment power.  */
-    TRUE,             /* The one and only.  */
-    bfd_default_compatible,
-    bfd_default_scan,
-    0,
-  };
+{
+  8,                /* 8 bits in a word.  */
+  16,               /* 16 bits in an address.  */
+  8,                /*  8 bits in a byte.  */
+  bfd_arch_tarn,    /* enum bfd_architecture arch.  */
+  bfd_mach_tarn,
+  "tarn",           /* Arch name.  */
+  "tarn",           /* Printable name.  */
+  2,                /* Unsigned int section alignment power.  */
+  TRUE,             /* The one and only.  */
+  bfd_default_compatible,
+  bfd_default_scan,
+  bfd_arch_default_fill,
+  NULL,
+  0 /* Maximum offset of a reloc from the start of an insn.  */
+};

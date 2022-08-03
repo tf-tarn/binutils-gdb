@@ -147,6 +147,8 @@ typedef struct {
 
 #define TARN_ALU_MODE_MASK 0xf
 
+#define TARN_STACK_SIZE 8192
+#define TARN_STACK_MASK (TARN_STACK_SIZE - 1)
 
 #elif TARN_VERSION==TARN_VERSION_V29
 

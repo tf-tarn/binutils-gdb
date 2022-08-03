@@ -226,7 +226,7 @@ md_begin (void)
 
   tarn_mod_hash = str_htab_create ();
 
-  for (int i = 0; i < ARRAY_SIZE (exp_mod); ++i)
+  for (size_t i = 0; i < ARRAY_SIZE (exp_mod); ++i)
     {
       mod_index m;
 
@@ -325,6 +325,13 @@ md_assemble (char *str)
       // Allocate space in the fragment for the opcode.
       p = frag_more (2);
       md_number_to_chars(p, TARN_INST_JUMP, 2);
+      return;
+  }
+
+  if (opcode->opcode == TARN_JNZ) {
+      // Allocate space in the fragment for the opcode.
+      p = frag_more (2);
+      md_number_to_chars(p, TARN_INST_JNZ, 2);
       return;
   }
 
@@ -431,12 +438,15 @@ md_assemble (char *str)
                   // An unstated IL value is taken to be zero.
                   p = frag_more (1);
                   md_number_to_chars(p, 0, 1);
+                  // Don't do this here, because it will eat the first
+                  // character of the next line.
+                  // ignore_rest_of_line ();
+                  return;
+              } else {
+                  as_bad (_("need comma followed by IL value %s (%p, %lu)"), op_start, op_start, op_end - op_start);
                   ignore_rest_of_line ();
                   return;
               }
-              as_bad (_("need comma followed by IL value %s (%p, %lu)"), op_start, op_start, op_end - op_start);
-              ignore_rest_of_line ();
-              return;
           }
       }
       return;
@@ -575,10 +585,13 @@ md_apply_fix (fixS *fixP ATTRIBUTE_UNUSED, valueT * valP ATTRIBUTE_UNUSED, segT 
 
 
       case BFD_RELOC_TARN_8_LO:
+          // don't add fx_offset, I guess.
+          /* val += fixP->fx_offset; */
           *where = 0xff & val;
           break;
 
       case BFD_RELOC_TARN_8_HI:
+          /* val += fixP->fx_offset; */
           *where = 0xff & (val >> 8);
           break;
 
@@ -614,7 +627,9 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
   rel->address = fixp->fx_frag->fr_address + fixp->fx_where;
 
   r_type = fixp->fx_r_type;
-  rel->addend = fixp->fx_addnumber;
+  // This probably ought to be fx_addnumber but the addend is actually in fx_offset...
+  // Is this a bug?
+  rel->addend = fixp->fx_offset;
   rel->howto = bfd_reloc_type_lookup (stdoutput, r_type);
 
   if (rel->howto == NULL)
@@ -648,4 +663,8 @@ md_pcrel_from (fixS *fixP)
       abort();
       return addr;
     }
+}
+
+int tc_tarn_fix_adjustable(fixS *fixP) {
+    return fixP->fx_addsy == NULL;
 }

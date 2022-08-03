@@ -97,3 +97,6 @@ extern long md_pcrel_from (struct fix *);
 
 
 #define md_section_align(SEGMENT, SIZE)     (SIZE)
+
+// This makes local symbols relocatable with lo8(), hi8()
+#define tc_fix_adjustable(fixp) tc_tarn_fix_adjustable(fixp)

@@ -123,8 +123,8 @@ static reloc_howto_type tarn_elf_howto_table[] =
 	 bfd_elf_generic_reloc,	/* special_function */
 	 "R_TARN_8_LO8",		/* name */
 	 FALSE,			/* partial_inplace */
-	 0xffffff,		/* src_mask */
-	 0xffffff,		/* dst_mask */
+	 0xff,		/* src_mask */
+	 0xff,		/* dst_mask */
 	 FALSE),		/* pcrel_offset */
   /* hi8-part to use in  .byte hi8(sym).  */
   HOWTO (R_TARN_8_HI8,		/* type */
