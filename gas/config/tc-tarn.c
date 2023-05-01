@@ -246,6 +246,8 @@ parse_exp_save_ilp (char *s, expressionS *op)
 
   input_line_pointer = s;
   expression (op);
+  // We don't use this, so set it to zero just in case.
+  op->X_md = 0;
   s = input_line_pointer;
   input_line_pointer = save;
   return s;
@@ -269,9 +271,11 @@ int check_for_tarn_ops(char **line_ptr, char **opname, char **oparg) {
         return 0;
     }
     *where = 0;
+
     *line_ptr = where + 1;
     *opname = _opname;
     *oparg = _oparg;
+
     return 1;
 }
 
@@ -286,7 +290,7 @@ md_assemble (char *str)
   char *op_end;
 
   tarn_opc_info_t *opcode;
-  char *p;
+  char *output_ptr;
   char pend;
 
   int nlen = 0;
@@ -316,37 +320,37 @@ md_assemble (char *str)
 
   if (opcode->opcode == TARN_NOP) {
       // Allocate space in the fragment for the opcode.
-      p = frag_more (2);
-      md_number_to_chars(p, 0, 2);
+      output_ptr = frag_more (2);
+      md_number_to_chars(output_ptr, 0, 2);
       return;
   }
 
   if (opcode->opcode == TARN_JUMP) {
       // Allocate space in the fragment for the opcode.
-      p = frag_more (2);
-      md_number_to_chars(p, TARN_INST_JUMP, 2);
+      output_ptr = frag_more (2);
+      md_number_to_chars(output_ptr, TARN_INST_JUMP, 2);
       return;
   }
 
   if (opcode->opcode == TARN_JNZ) {
       // Allocate space in the fragment for the opcode.
-      p = frag_more (2);
-      md_number_to_chars(p, TARN_INST_JNZ, 2);
+      output_ptr = frag_more (2);
+      md_number_to_chars(output_ptr, TARN_INST_JNZ, 2);
       return;
   }
 
   #if TARN_VERSION==TARN_VERSION_VFUTURE
   if (opcode->opcode == TARN_JNZ) {
       // Allocate space in the fragment for the opcode.
-      p = frag_more (2);
-      md_number_to_chars(p, 0x0500, 2);
+      output_ptr = frag_more (2);
+      md_number_to_chars(output_ptr, 0x0500, 2);
       return;
   }
 
   if (opcode->opcode == TARN_RETI) {
       // Allocate space in the fragment for the opcode.
       p = frag_more (2);
-      md_number_to_chars(p, 0x4000, 2);
+      md_number_to_chars(output_ptr, 0x4000, 2);
       return;
   }
   #endif
@@ -386,12 +390,12 @@ md_assemble (char *str)
       *op_end = pend;
 
       // Allocate space in the fragment for the opcode.
-      p = frag_more (1);
+      output_ptr = frag_more (1);
 
       // Whatever the argument is, we know the opcode, so store that in
       // the current fragment.
       char inst = (reg1->num << 4) + reg2->num;
-      md_number_to_chars(p, inst, 1);
+      md_number_to_chars(output_ptr, inst, 1);
 
       {
           // uh, save expression as a fixup/reloc?
@@ -406,7 +410,11 @@ md_assemble (char *str)
               while (ISSPACE (*op_end)) ++op_end;
               char *opname = NULL, *oparg = NULL;
               where = frag_more (1);
+              md_number_to_chars(where, 0, 1);
               if (check_for_tarn_ops(&op_end, &opname, &oparg)) {
+                  if (!strcmp(oparg, "___prints")) {
+                      printf("___prints\n");
+                  }
                   mod_index m;
 
                   m.ptr = str_hash_find (tarn_mod_hash, opname);
@@ -420,7 +428,6 @@ md_assemble (char *str)
                                    &arg,
                                    0,
                                    EXP_MOD_RELOC (mod));
-                      //printf("pseudo-op %s ( %s )\n", opname, oparg);
                   } else {
                       as_bad(_("unknown pseudo-operator \"%s\""), opname);
                   }
@@ -436,8 +443,7 @@ md_assemble (char *str)
           } else {
               if (is_end_of_line[*op_end & 0xff]) {
                   // An unstated IL value is taken to be zero.
-                  p = frag_more (1);
-                  md_number_to_chars(p, 0, 1);
+                  md_number_to_chars(frag_more (1), 0, 1);
                   // Don't do this here, because it will eat the first
                   // character of the next line.
                   // ignore_rest_of_line ();
