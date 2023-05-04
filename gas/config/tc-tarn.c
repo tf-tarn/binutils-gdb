@@ -412,9 +412,6 @@ md_assemble (char *str)
               where = frag_more (1);
               md_number_to_chars(where, 0, 1);
               if (check_for_tarn_ops(&op_end, &opname, &oparg)) {
-                  if (!strcmp(oparg, "___prints")) {
-                      printf("___prints\n");
-                  }
                   mod_index m;
 
                   m.ptr = str_hash_find (tarn_mod_hash, opname);
